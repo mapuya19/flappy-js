@@ -10,6 +10,7 @@ A modernized Flappy Bird game built with vanilla JavaScript and Canvas API. Orig
 - Responsive design for desktop and mobile
 - Touch controls, keyboard support, high scores with localStorage
 - Visual polish: particle effects, screen shake, parallax backgrounds
+- Auto-deployment to GitHub Pages via GitHub Actions
 
 ## Quick Start
 
@@ -32,6 +33,7 @@ Visit `http://localhost:5173` to play.
 npm run dev      # Development server
 npm run build    # Production build
 npm run preview  # Preview build locally
+npm run lint     # Run ESLint
 ```
 
 ## Project Structure
@@ -49,11 +51,24 @@ src/
     ├── ScreenShake.js      # Screen shake
     ├── audio.js            # Sound management
     └── storage.js          # High score persistence
+
+public/
+└── assets/               # Static assets (sounds, fonts)
 ```
 
-## Live Demo
+## Deployment
 
-Play at [https://mapuya19.github.io/flappy-js/](https://mapuya19.github.io/flappy-js/)
+The game is automatically deployed to GitHub Pages via GitHub Actions:
+
+- **Live Demo**: [https://matthewapuya.com/flappy-js/](https://matthewapuya.com/flappy-js/)
+- **Workflow**: Builds on push to master branch
+- **Source**: GitHub Actions (configured in `.github/workflows/deploy.yml`)
+
+To deploy locally:
+```bash
+npm run build
+# Upload contents of dist/ to your hosting provider
+```
 
 ## Original Version
 
