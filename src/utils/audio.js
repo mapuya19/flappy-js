@@ -31,12 +31,34 @@ function loadSound(url) {
   return new Promise((resolve) => {
     const audio = new Audio();
     audio.src = url;
-    audio.addEventListener('canplaythrough', () => {
-      resolve(audio);
+    let resolved = false;
+
+    const doResolve = (value) => {
+      if (!resolved) {
+        resolved = true;
+        resolve(value);
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      console.warn(`Audio timeout for ${url}, using anyway`);
+      doResolve(audio);
+    }, 5000);
+
+    audio.addEventListener('canplay', () => {
+      clearTimeout(timeout);
+      doResolve(audio);
     }, { once: true });
-    
-    audio.addEventListener('error', () => {
-      resolve(null);
+
+    audio.addEventListener('canplaythrough', () => {
+      clearTimeout(timeout);
+      doResolve(audio);
+    }, { once: true });
+
+    audio.addEventListener('error', (e) => {
+      clearTimeout(timeout);
+      console.warn(`Failed to load audio ${url}:`, e);
+      doResolve(null);
     }, { once: true });
   });
 }

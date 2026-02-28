@@ -2,7 +2,11 @@
 
 A modernized Flappy Bird game built with vanilla JavaScript and Canvas API. Originally created in 2020 with Processing and p5.js, rebuilt in 2026.
 
-![Flappy JS](flappy-js.png)
+<p align="center">
+  <img src="flappy-js.png" width="300" title="Original 2020 version (Processing/p5.js)"> 
+  <img src="flappy-js-new.png" width="300" title="Modern 2026 rebuild (Vanilla JS/Canvas)">
+</p>
+<p align="center"><small>Left: Original 2020 version • Right: Modern 2026 rebuild</small></p>
 
 ## Features
 
