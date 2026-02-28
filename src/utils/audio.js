@@ -1,14 +1,83 @@
+class Sound {
+  constructor(buffer) {
+    this.buffer = buffer;
+    this.audioContext = null;
+  }
+
+  play() {
+    try {
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 44100
+        });
+      }
+
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+
+      const source = this.audioContext.createBufferSource();
+      source.buffer = this.buffer;
+      
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.value = 0.3;
+      
+      source.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+      source.start(0);
+    } catch (e) {
+    }
+  }
+}
+
+async function loadAudioBuffer(url) {
+  try {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    return arrayBuffer;
+  } catch (e) {
+    console.warn(`Failed to load audio buffer from ${url}:`, e);
+    return null;
+  }
+}
+
+async function decodeAudioBuffer(arrayBuffer) {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+      sampleRate: 44100
+    });
+    const buffer = await audioContext.decodeAudioData(arrayBuffer);
+    audioContext.close();
+    return buffer;
+  } catch (e) {
+    console.warn('Failed to decode audio buffer:', e);
+    return null;
+  }
+}
+
 export async function loadSounds() {
   const base = import.meta.env.BASE_URL;
   try {
-    const [point, wing, hit, die] = await Promise.all([
-      loadSound(`${base}assets/point.wav`),
-      loadSound(`${base}assets/wing.mp3`),
-      loadSound(`${base}assets/hit.mp3`),
-      loadSound(`${base}assets/die.mp3`)
+    const [pointBuffer, wingBuffer, hitBuffer, dieBuffer] = await Promise.all([
+      loadAudioBuffer(`${base}assets/point.m4a`),
+      loadAudioBuffer(`${base}assets/wing.m4a`),
+      loadAudioBuffer(`${base}assets/hit.m4a`),
+      loadAudioBuffer(`${base}assets/die.m4a`)
     ]);
-    
-    return { point, wing, hit, die };
+
+    const [point, wing, hit, die] = await Promise.all([
+      decodeAudioBuffer(pointBuffer),
+      decodeAudioBuffer(wingBuffer),
+      decodeAudioBuffer(hitBuffer),
+      decodeAudioBuffer(dieBuffer)
+    ]);
+
+    return {
+      point: point ? new Sound(point) : null,
+      wing: wing ? new Sound(wing) : null,
+      hit: hit ? new Sound(hit) : null,
+      die: die ? new Sound(die) : null
+    };
   } catch (error) {
     console.warn('Failed to load sounds:', error);
     return {};
@@ -24,41 +93,5 @@ export async function loadFont(url) {
     }).catch(() => {
       resolve('Arial');
     });
-  });
-}
-
-function loadSound(url) {
-  return new Promise((resolve) => {
-    const audio = new Audio();
-    audio.src = url;
-    let resolved = false;
-
-    const doResolve = (value) => {
-      if (!resolved) {
-        resolved = true;
-        resolve(value);
-      }
-    };
-
-    const timeout = setTimeout(() => {
-      console.warn(`Audio timeout for ${url}, using anyway`);
-      doResolve(audio);
-    }, 5000);
-
-    audio.addEventListener('canplay', () => {
-      clearTimeout(timeout);
-      doResolve(audio);
-    }, { once: true });
-
-    audio.addEventListener('canplaythrough', () => {
-      clearTimeout(timeout);
-      doResolve(audio);
-    }, { once: true });
-
-    audio.addEventListener('error', (e) => {
-      clearTimeout(timeout);
-      console.warn(`Failed to load audio ${url}:`, e);
-      doResolve(null);
-    }, { once: true });
   });
 }

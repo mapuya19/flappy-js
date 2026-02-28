@@ -17,13 +17,11 @@ export default class Particle {
   }
   
   draw(ctx) {
-    ctx.save();
     ctx.globalAlpha = this.life;
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
   }
   
   isDead() {
@@ -63,7 +61,15 @@ export class ParticleSystem {
   }
   
   draw(ctx) {
-    this.particles.forEach(particle => particle.draw(ctx));
+    ctx.save();
+    this.particles.forEach(particle => {
+      ctx.globalAlpha = particle.life;
+      ctx.fillStyle = particle.color;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
   }
   
   clear() {
