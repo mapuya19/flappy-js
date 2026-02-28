@@ -1,25 +1,44 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>flappy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="A modern Flappy Bird game built with vanilla JavaScript and Canvas API">
+    <title>Flappy JS - Modern Edition</title>
 
     <style>
-      body {
-        padding: 0;
+      * {
         margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: 'Arial', sans-serif;
+        overflow: hidden;
+      }
+
+      #game-container {
+        position: relative;
+      }
+
+      canvas {
+        display: block;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
     </style>
-
-    <script src="p5.js"></script>
-    <script src="addons/p5.sound.js"></script>
-    
   </head>
 
   <body>
-    <script src="Flappy.js"></script>
+    <div id="game-container"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 
 </html>
