@@ -9,7 +9,7 @@ import { getHighScore, setHighScore } from './utils/storage.js';
 
 const GameConfig = {
   canvas: { width: 500, height: 600 },
-  bird: { x: 150, radius: 17, gravity: 0.3, jumpForce: -7 },
+  bird: { x: 150, radius: 17, gravity: 0.4, jumpForce: -7 },
   tubes: { width: 78, gap: 130, minimum: 130, speed: 3.0, spacing: 250 },
   background: { groundSpeed: 3.0 },
   hover: { frequency: 3, amplitude: 8 }
@@ -30,7 +30,7 @@ export default class Game {
     
     this.ctx = this.canvas.getContext('2d', { alpha: false });
     
-    this.gameState = 'menu';
+    this.gameState = 'loading';
     this.font = null;
     this.lastTime = 0;
     this.gameStarted = false;
@@ -50,21 +50,25 @@ export default class Game {
     
     this.setupInput();
     this.loadAssets();
+    this.start();
   }
   
   async loadAssets() {
-    const [sounds, font] = await Promise.all([
-      loadSounds(),
-      loadFont(`${import.meta.env.BASE_URL}assets/flappy-font.ttf`)
-    ]);
-    
-    this.sounds = sounds;
-    this.font = font;
-    this.initGame();
-    
-    if (!this.gameStarted) {
-      this.gameStarted = true;
-      this.start();
+    try {
+      const [sounds, font] = await Promise.all([
+        loadSounds(),
+        loadFont(`${import.meta.env.BASE_URL}assets/flappy-font.ttf`)
+      ]);
+      
+      this.sounds = sounds;
+      this.font = font;
+      this.initGame();
+      this.gameState = 'menu';
+    } catch (error) {
+      console.error('Failed to load assets:', error);
+      this.gameState = 'menu';
+      this.font = 'Arial';
+      this.initGame();
     }
   }
   
@@ -223,7 +227,9 @@ export default class Game {
       this.score.draw(this.ctx, this.currentScore, this.font);
     }
     
-    if (this.gameState === 'menu') {
+    if (this.gameState === 'loading') {
+      this.drawLoading();
+    } else if (this.gameState === 'menu') {
       this.drawMenu();
     } else if (this.gameState === 'ready') {
       this.drawReady();
@@ -232,6 +238,25 @@ export default class Game {
     }
     
     this.ctx.restore();
+  }
+  
+  drawLoading() {
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    
+    const x = this.width / 2;
+    const y = this.height / 2;
+    
+    this.ctx.font = `bold 48px ${this.font || 'Arial'}`;
+    this.ctx.textAlign = 'center';
+    
+    this.ctx.strokeStyle = 'black';
+    this.ctx.lineWidth = 4;
+    this.ctx.lineJoin = 'round';
+    this.ctx.strokeText('Loading...', x, y);
+    
+    this.ctx.fillStyle = 'white';
+    this.ctx.fillText('Loading...', x, y);
   }
   
   drawMenu() {
