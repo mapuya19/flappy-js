@@ -1,11 +1,12 @@
 export default class Tubes {
-  constructor(canvasWidth) {
+  constructor(canvasWidth, canvasHeight, config = {}) {
     this.canvasWidth = canvasWidth;
-    this.tubeWidth = 78;
-    this.gap = 130;
-    this.minimum = 130;
-    this.speed = 1.5;
-    this.tubeSpacing = 250;
+    this.canvasHeight = canvasHeight;
+    this.tubeWidth = config.width || 78;
+    this.gap = config.gap || 130;
+    this.minimum = config.minimum || 130;
+    this.speed = config.speed || 3.0;
+    this.tubeSpacing = config.spacing || 250;
     
     this.topTube = 0;
     this.bottomTube = 0;
@@ -23,13 +24,13 @@ export default class Tubes {
   }
   
   resetTube1() {
-    this.topTube = Math.random() * (600 - this.minimum - this.minimum) + this.minimum;
+    this.topTube = Math.random() * (this.canvasHeight - this.minimum - this.minimum) + this.minimum;
     this.bottomTube = this.topTube + this.gap;
     this.tube1Passed = false;
   }
   
   resetTube2() {
-    this.topTube2 = Math.random() * (600 - this.minimum - this.minimum) + this.minimum;
+    this.topTube2 = Math.random() * (this.canvasHeight - this.minimum - this.minimum) + this.minimum;
     this.bottomTube2 = this.topTube2 + this.gap;
     this.tube2Passed = false;
   }
@@ -41,12 +42,12 @@ export default class Tubes {
       
       if (this.posX + this.tubeWidth < 0) {
         this.resetTube1();
-        this.posX = 500;
+        this.posX = this.canvasWidth;
       }
       
       if (this.posX2 + this.tubeWidth < 0) {
         this.resetTube2();
-        this.posX2 = 500;
+        this.posX2 = this.canvasWidth;
       }
     }
   }
@@ -74,11 +75,11 @@ export default class Tubes {
     ctx.fillRect(x - capOverhang, topHeight - capHeight, (pipeWidth + capOverhang * 2) * 0.3, capHeight);
     
     ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(x, bottomY, pipeWidth, 600 - bottomY);
-    ctx.strokeRect(x, bottomY, pipeWidth, 600 - bottomY);
+    ctx.fillRect(x, bottomY, pipeWidth, this.canvasHeight - bottomY);
+    ctx.strokeRect(x, bottomY, pipeWidth, this.canvasHeight - bottomY);
     
     ctx.fillStyle = '#66BB6A';
-    ctx.fillRect(x, bottomY, pipeWidth * 0.3, 600 - bottomY);
+    ctx.fillRect(x, bottomY, pipeWidth * 0.3, this.canvasHeight - bottomY);
     
     ctx.fillStyle = '#4CAF50';
     ctx.fillRect(x - capOverhang, bottomY, pipeWidth + capOverhang * 2, capHeight);

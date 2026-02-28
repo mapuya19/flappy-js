@@ -1,15 +1,17 @@
 export default class Bird {
-  constructor(x, y) {
+  constructor(x, y, canvasHeight, gravity = 0.3, jumpForce = -8.0) {
     this.x = x;
     this.y = y;
+    this.canvasHeight = canvasHeight;
     this.radius = 17;
     this.velocity = 0;
-    this.gravity = 0.15;
+    this.gravity = gravity;
+    this.jumpForce = jumpForce;
   }
   
   jump() {
-    if (this.velocity > -2) {
-      this.velocity = -4.6;
+    if (this.velocity > -4) {
+      this.velocity = this.jumpForce;
     }
   }
   
@@ -17,13 +19,13 @@ export default class Bird {
     this.velocity += this.gravity;
     this.y += this.velocity;
     
-    this.y = Math.max(this.radius, Math.min(this.y, 600 - this.radius));
+    this.y = Math.max(this.radius, Math.min(this.y, this.canvasHeight - this.radius));
   }
   
   draw(ctx, hoverOffset = 0) {
     ctx.save();
     
-    const x = 150;
+    const x = this.x;
     const y = this.y + hoverOffset;
     const size = this.radius * 2;
     

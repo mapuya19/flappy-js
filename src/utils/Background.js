@@ -1,9 +1,9 @@
 export default class Background {
-  constructor(width, height) {
+  constructor(width, height, groundSpeed = 3.0) {
     this.width = width;
     this.height = height;
     this.groundOffset = 0;
-    this.groundSpeed = 1.5;
+    this.groundSpeed = groundSpeed;
     
     this.clouds = [];
     this.buildings = [];

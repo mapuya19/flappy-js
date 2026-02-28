@@ -7,11 +7,19 @@ import ScreenShake from './utils/ScreenShake.js';
 import { loadSounds, loadFont } from './utils/audio.js';
 import { getHighScore, setHighScore } from './utils/storage.js';
 
+const GameConfig = {
+  canvas: { width: 500, height: 600 },
+  bird: { x: 150, radius: 17, gravity: 0.3, jumpForce: -7 },
+  tubes: { width: 78, gap: 130, minimum: 130, speed: 3.0, spacing: 250 },
+  background: { groundSpeed: 3.0 },
+  hover: { frequency: 3, amplitude: 8 }
+};
+
 export default class Game {
   constructor(container) {
     this.container = container;
-    this.width = 500;
-    this.height = 600;
+    this.width = GameConfig.canvas.width;
+    this.height = GameConfig.canvas.height;
     
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.width;
@@ -20,7 +28,7 @@ export default class Game {
     this.canvas.style.maxHeight = '100vh';
     this.container.appendChild(this.canvas);
     
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', { alpha: false });
     
     this.gameState = 'menu';
     this.font = null;
@@ -32,7 +40,7 @@ export default class Game {
     this.bird = null;
     this.tubes = null;
     this.score = null;
-    this.background = new Background(this.width, this.height);
+    this.background = new Background(this.width, this.height, GameConfig.background.groundSpeed);
     this.particles = new ParticleSystem();
     this.screenShake = new ScreenShake();
     this.sounds = {};
@@ -61,8 +69,8 @@ export default class Game {
   }
   
   initGame() {
-    this.bird = new Bird(150, this.height / 2);
-    this.tubes = new Tubes(this.width);
+    this.bird = new Bird(GameConfig.bird.x, this.height / 2, this.height, GameConfig.bird.gravity, GameConfig.bird.jumpForce);
+    this.tubes = new Tubes(this.width, this.height, GameConfig.tubes);
     this.score = new Score();
     this.currentScore = 0;
     this.hoverTime = 0;
@@ -77,7 +85,7 @@ export default class Game {
         if (this.bird) {
           this.bird.jump();
           this.sounds.wing?.play();
-          this.particles.emit(150, this.bird.y, 5, {
+          this.particles.emit(this.bird.x, this.bird.y, 5, {
             colors: ['#FFE666', '#FFD93D'],
             minVelocity: { x: -50, y: -80 },
             maxVelocity: { x: 50, y: -40 },
@@ -114,7 +122,7 @@ export default class Game {
     if (this.bird) {
       this.bird.jump();
       this.sounds.wing?.play();
-      this.particles.emit(150, this.bird.y, 5, {
+      this.particles.emit(this.bird.x, this.bird.y, 5, {
         colors: ['#FFE666', '#FFD93D'],
         minVelocity: { x: -50, y: -80 },
         maxVelocity: { x: 50, y: -40 },
@@ -139,7 +147,7 @@ export default class Game {
     
     this.screenShake.shake(15, 0.4);
     
-    this.particles.emit(150, this.bird.y, 20, {
+    this.particles.emit(this.bird.x, this.bird.y, 20, {
       colors: ['#FFE666', '#FF6B6B', '#FFD93D'],
       minVelocity: { x: -150, y: -200 },
       maxVelocity: { x: 150, y: -50 },
@@ -177,7 +185,7 @@ export default class Game {
       if (this.tubes.checkScore(this.bird)) {
         this.currentScore++;
         this.sounds.point?.play();
-        this.particles.emit(150, 50, 10, {
+        this.particles.emit(this.bird.x, 50, 10, {
           colors: ['#4CAF50', '#66BB6A', '#81C784'],
           minVelocity: { x: -80, y: -100 },
           maxVelocity: { x: 80, y: -30 },
@@ -192,7 +200,7 @@ export default class Game {
   }
   
   draw() {
-    const shake = this.screenShake.update(0);
+    const shake = this.screenShake.getShake();
     
     this.ctx.save();
     this.ctx.translate(shake.x, shake.y);
@@ -316,16 +324,67 @@ export default class Game {
   }
   
   start() {
+    this.accumulatedTime = 0;
+    this.fixedTimeStep = 1/60;
+    
     const gameLoop = (timestamp) => {
-      const deltaTime = (timestamp - this.lastTime) / 1000;
+      const deltaTime = Math.min((timestamp - this.lastTime) / 1000, 0.05);
       this.lastTime = timestamp;
       
-      this.update(deltaTime);
+      this.accumulatedTime += deltaTime;
+      
+      while (this.accumulatedTime >= this.fixedTimeStep) {
+        this.updateGameLogic();
+        this.accumulatedTime -= this.fixedTimeStep;
+      }
+      
+      this.updateVisuals(deltaTime);
       this.draw();
       
       requestAnimationFrame(gameLoop);
     };
     
+    this.lastTime = performance.now();
     requestAnimationFrame(gameLoop);
+  }
+  
+  updateGameLogic() {
+    if (!this.bird || !this.tubes) {
+      return;
+    }
+    
+    if (this.gameState === 'ready') {
+      this.hoverTime += this.fixedTimeStep;
+      this.hoverOffset = Math.sin(this.hoverTime * GameConfig.hover.frequency) * GameConfig.hover.amplitude;
+    } else if (this.gameState === 'playing') {
+      this.bird.update();
+      this.tubes.update(true);
+      
+      if (this.bird.checkCollision(this.tubes)) {
+        this.gameOver();
+      }
+      
+      if (this.tubes.checkScore(this.bird)) {
+        this.currentScore++;
+        this.sounds.point?.play();
+        this.particles.emit(this.bird.x, 50, 10, {
+          colors: ['#4CAF50', '#66BB6A', '#81C784'],
+          minVelocity: { x: -80, y: -100 },
+          maxVelocity: { x: 80, y: -30 },
+          minSize: 3,
+          maxSize: 6
+        });
+      }
+    } else if (this.gameState === 'gameover') {
+      this.bird.update();
+      this.tubes.update(false);
+    }
+  }
+  
+  updateVisuals(deltaTime) {
+    const speedMultiplier = this.gameState === 'playing' ? 1 : 0.2;
+    this.background.update(deltaTime, speedMultiplier);
+    this.particles.update(deltaTime);
+    this.screenShake.update(deltaTime);
   }
 }
