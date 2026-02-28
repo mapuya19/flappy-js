@@ -10,6 +10,9 @@ export default class Background {
     
     this.initClouds();
     this.initBuildings();
+    
+    this.skyGradient = null;
+    this.cachedCanvas = null;
   }
   
   initClouds() {
@@ -61,11 +64,13 @@ export default class Background {
   }
   
   drawSky(ctx) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
-    gradient.addColorStop(0, '#4EC0CA');
-    gradient.addColorStop(1, '#70C5CE');
+    if (!this.skyGradient) {
+      this.skyGradient = ctx.createLinearGradient(0, 0, 0, this.height);
+      this.skyGradient.addColorStop(0, '#4EC0CA');
+      this.skyGradient.addColorStop(1, '#70C5CE');
+    }
     
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = this.skyGradient;
     ctx.fillRect(0, 0, this.width, this.height);
   }
   

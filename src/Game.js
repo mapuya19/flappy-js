@@ -89,7 +89,7 @@ export default class Game {
         if (this.bird) {
           this.bird.jump();
           this.sounds.wing?.play();
-          this.particles.emit(this.bird.x, this.bird.y, 5, {
+          this.particles.emit(this.bird.x, this.bird.y, 3, {
             colors: ['#FFE666', '#FFD93D'],
             minVelocity: { x: -50, y: -80 },
             maxVelocity: { x: 50, y: -40 },
@@ -126,7 +126,7 @@ export default class Game {
     if (this.bird) {
       this.bird.jump();
       this.sounds.wing?.play();
-      this.particles.emit(this.bird.x, this.bird.y, 5, {
+      this.particles.emit(this.bird.x, this.bird.y, 3, {
         colors: ['#FFE666', '#FFD93D'],
         minVelocity: { x: -50, y: -80 },
         maxVelocity: { x: 50, y: -40 },
@@ -149,9 +149,9 @@ export default class Game {
     this.sounds.hit?.play();
     this.sounds.die?.play();
     
-    this.screenShake.shake(15, 0.4);
+    this.screenShake.shake(10, 0.3);
     
-    this.particles.emit(this.bird.x, this.bird.y, 20, {
+    this.particles.emit(this.bird.x, this.bird.y, 12, {
       colors: ['#FFE666', '#FF6B6B', '#FFD93D'],
       minVelocity: { x: -150, y: -200 },
       maxVelocity: { x: 150, y: -50 },
@@ -189,7 +189,7 @@ export default class Game {
       if (this.tubes.checkScore(this.bird)) {
         this.currentScore++;
         this.sounds.point?.play();
-        this.particles.emit(this.bird.x, 50, 10, {
+        this.particles.emit(this.bird.x, 50, 6, {
           colors: ['#4CAF50', '#66BB6A', '#81C784'],
           minVelocity: { x: -80, y: -100 },
           maxVelocity: { x: 80, y: -30 },
@@ -266,48 +266,31 @@ export default class Game {
     const x = this.width / 2;
     const y = this.height / 2;
     
-    this.ctx.font = `bold 60px ${this.font || 'Arial'}`;
     this.ctx.textAlign = 'center';
     
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.lineJoin = 'round';
-    this.ctx.strokeText('Flappy JS', x, y - 20);
-    
+    this.drawOutlinedText('Flappy JS', x, y - 20, `bold 60px ${this.font || 'Arial'}`);
+    this.drawOutlinedText('Tap or press Space to start', x, y + 50, `32px ${this.font || 'Arial'}`);
+  }
+  
+  drawOutlinedText(text, x, y, font) {
+    this.ctx.font = font;
     this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Flappy JS', x, y - 20);
-    
-    this.ctx.font = `32px ${this.font || 'Arial'}`;
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeText('Tap or press Space to start', x, y + 50);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Tap or press Space to start', x, y + 50);
+    this.ctx.shadowColor = 'black';
+    this.ctx.shadowBlur = 3;
+    this.ctx.shadowOffsetX = 2;
+    this.ctx.shadowOffsetY = 2;
+    this.ctx.fillText(text, x, y);
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
   }
   
   drawReady() {
     const x = this.width / 2;
     const y = this.height / 2;
     
-    this.ctx.font = `bold 60px ${this.font || 'Arial'}`;
-    this.ctx.textAlign = 'center';
-    
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.lineJoin = 'round';
-    this.ctx.strokeText('Get Ready!', x, y - 20);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Get Ready!', x, y - 20);
-    
-    this.ctx.font = `32px ${this.font || 'Arial'}`;
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeText('Tap or press Space to start', x, y + 50);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Tap or press Space to start', x, y + 50);
+    this.drawOutlinedText('Get Ready!', x, y - 20, `bold 60px ${this.font || 'Arial'}`);
+    this.drawOutlinedText('Tap or press Space to start', x, y + 50, `32px ${this.font || 'Arial'}`);
   }
   
   drawGameOver() {
@@ -317,35 +300,10 @@ export default class Game {
     const x = this.width / 2;
     const y = this.height / 2;
     
-    this.ctx.font = `bold 60px ${this.font || 'Arial'}`;
-    this.ctx.textAlign = 'center';
-    
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.lineJoin = 'round';
-    this.ctx.strokeText('Game Over', x, y - 90);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Game Over', x, y - 90);
-    
-    this.ctx.font = `30px ${this.font || 'Arial'}`;
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    
-    this.ctx.strokeText(`Score: ${this.currentScore}`, x, y - 10);
-    this.ctx.strokeText(`Best: ${this.highScore}`, x, y + 30);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText(`Score: ${this.currentScore}`, x, y - 10);
-    this.ctx.fillText(`Best: ${this.highScore}`, x, y + 30);
-    
-    this.ctx.font = `28px ${this.font || 'Arial'}`;
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeText('Tap or press Space to restart', x, y + 90);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Tap or press Space to restart', x, y + 90);
+    this.drawOutlinedText('Game Over', x, y - 90, `bold 60px ${this.font || 'Arial'}`);
+    this.drawOutlinedText(`Score: ${this.currentScore}`, x, y - 10, `30px ${this.font || 'Arial'}`);
+    this.drawOutlinedText(`Best: ${this.highScore}`, x, y + 30, `30px ${this.font || 'Arial'}`);
+    this.drawOutlinedText('Tap or press Space to restart', x, y + 90, `28px ${this.font || 'Arial'}`);
   }
   
   start() {
@@ -392,7 +350,7 @@ export default class Game {
       if (this.tubes.checkScore(this.bird)) {
         this.currentScore++;
         this.sounds.point?.play();
-        this.particles.emit(this.bird.x, 50, 10, {
+        this.particles.emit(this.bird.x, 50, 6, {
           colors: ['#4CAF50', '#66BB6A', '#81C784'],
           minVelocity: { x: -80, y: -100 },
           maxVelocity: { x: 80, y: -30 },
