@@ -47,7 +47,7 @@ export default class Game {
   async loadAssets() {
     const [sounds, font] = await Promise.all([
       loadSounds(),
-      loadFont('/assets/flappy-font.ttf')
+      loadFont(`${import.meta.env.BASE_URL}assets/flappy-font.ttf`)
     ]);
     
     this.sounds = sounds;

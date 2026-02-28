@@ -1,10 +1,11 @@
 export async function loadSounds() {
+  const base = import.meta.env.BASE_URL;
   try {
     const [point, wing, hit, die] = await Promise.all([
-      loadSound('/assets/point.wav'),
-      loadSound('/assets/wing.mp3'),
-      loadSound('/assets/hit.mp3'),
-      loadSound('/assets/die.mp3')
+      loadSound(`${base}assets/point.wav`),
+      loadSound(`${base}assets/wing.mp3`),
+      loadSound(`${base}assets/hit.mp3`),
+      loadSound(`${base}assets/die.mp3`)
     ]);
     
     return { point, wing, hit, die };
