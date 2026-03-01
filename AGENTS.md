@@ -45,6 +45,7 @@ npm run lint     # Run ESLint on src/
 - Use ES6 class syntax
 - Default parameter values in constructors
 - Config objects passed via constructor with destructuring: `constructor(config) { this.x = config.x || 90; }`
+- Configuration constants defined at module level using UPPER_SNAKE_CASE for maintainability
 - Reset methods named `reset()` for entity state restoration
 
 ### Naming
@@ -105,6 +106,7 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 - Resume context if suspended
 - Gain node for volume control (default 0.3)
 - Files: .m4a format for compression
+- Scene transitions use swoosh sound effect for polish
 
 ### Sprite Rendering
 - All game sprites drawn from a single sprite atlas
@@ -120,12 +122,15 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 
 ## Game Configuration
 
-Located in `src/Game.js`, key values:
-- Tube gap: 125 pixels
-- Tube speed: 90 pixels/second
-- Tube spacing: 420 pixels
-- Ground speed: matches tubes
-- Bird jump velocity: configured for physics feel
+Configuration is distributed across individual modules for maintainability:
+- Each entity and utility class defines its own config constants at module level
+- Config values use UPPER_SNAKE_CASE naming convention
+- Game-wide settings in `src/Game.js`:
+  - Tube gap: 125 pixels
+  - Tube speed: 90 pixels/second
+  - Tube spacing: 420 pixels
+  - Ground speed: matches tubes
+  - Bird jump velocity: configured for physics feel
 
 ## Best Practices
 
@@ -141,6 +146,7 @@ Located in `src/Game.js`, key values:
 3. Add corresponding state to `GameState.js` if needed
 4. Handle proper cleanup in `onExit()`
 5. Implement all required methods
+6. Consider adding swoosh sound effect on scene transitions for consistency
 
 ### When Adding UI Components
 1. Place in `src/ui/` directory
