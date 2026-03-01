@@ -11,6 +11,7 @@ This is a modern Flappy Bird clone built with vanilla JavaScript, Canvas API, an
 - **Rendering**: HTML5 Canvas API
 - **Audio**: Web Audio API
 - **Linting**: ESLint
+- **License**: MIT
 
 ## Essential Commands
 
@@ -49,7 +50,7 @@ npm run lint     # Run ESLint on src/
 ### Naming
 - Class names: PascalCase
 - Methods: camelCase
-- Constants: UPPER_SNAKE_CASE (e.g., GameState.START, WorldSpeed.GROUND)
+- Constants: UPPER_SNAKE_CASE (e.g., GameState.START)
 - Private properties: prefix with `_` (not heavily used, but good practice)
 
 ### Variables
@@ -111,6 +112,21 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 - Options include rotation and other transformations
 - Efficient rendering with minimal draw calls
 
+### Visual Effects
+- **ScreenShake**: Utility for shake effects (collision, impact)
+- **ParticleSystem**: For particle effects (feathers, explosions)
+- Apply effects via `ctx.save()`/`ctx.restore()` pattern
+- Fade effects using `ctx.globalAlpha`
+
+## Game Configuration
+
+Located in `src/Game.js`, key values:
+- Tube gap: 125 pixels
+- Tube speed: 90 pixels/second
+- Tube spacing: 420 pixels
+- Ground speed: matches tubes
+- Bird jump velocity: configured for physics feel
+
 ## Best Practices
 
 ### When Modifying Game Logic
@@ -139,6 +155,12 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 4. Clear canvas at start of each frame
 5. Use sprite atlas for all game assets
 
+### When Using Visual Effects
+1. Update ScreenShake in scene's `update()` method
+2. Apply shake offset before drawing: `ctx.translate(shake.x, shake.y)`
+3. Update and draw ParticleSystem in scene loop
+4. Clear particles when scene changes via `onExit()`
+
 ### State Management
 - Game state transitions via `game.transitionTo(GameState.STATE)`
 - Scene handles its own state in `onEnter`/`onExit`
@@ -153,6 +175,9 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 4. **Delta time**: Always multiply movement by deltaTime for frame-rate independence
 5. **Optional chaining**: Use `?.` for sounds since they may fail to load
 6. **Sprite atlas**: All sprites must exist in atlas.json; check the file if sprite doesn't render
+7. **Font rendering**: Numbers use sprite font from atlas (`font_048` through `font_057`), not TTF fonts
+8. **Screen shake**: Apply offset to entire canvas, restore after drawing all elements
+9. **Animation timing**: Use ease functions for smooth UI transitions
 
 ## Testing
 
@@ -164,6 +189,20 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 - Verify score tracking and high score persistence
 - Test audio playback
 - Check production build: `npm run build && npm run preview`
+- Test screen shake and particle effects
+- Verify social meta tags (OpenGraph, Twitter Card)
+
+## File Cleanup
+
+The project uses `.gitignore` to exclude:
+- `node_modules/` - npm dependencies
+- `dist/` - build output
+- `.DS_Store` - macOS system files
+- IDE and OS specific files
+
+When removing files:
+- Use `git rm` for tracked files
+- Run `npm run lint` after deletions to verify no broken imports
 
 ## File Modifications Checklist
 
