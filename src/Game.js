@@ -1,18 +1,34 @@
+import { AtlasLoader } from './utils/AtlasLoader.js';
+import { SpriteRenderer } from './utils/SpriteRenderer.js';
 import Bird from './Bird.js';
 import Tubes from './Tubes.js';
-import Score from './Score.js';
+import Ground from './utils/Ground.js';
 import Background from './utils/Background.js';
-import { ParticleSystem } from './utils/ParticleSystem.js';
-import ScreenShake from './utils/ScreenShake.js';
-import { loadSounds, loadFont } from './utils/audio.js';
+import { loadSounds } from './utils/audio.js';
 import { getHighScore, setHighScore } from './utils/storage.js';
+import { GameState, WorldSpeed } from './GameState.js';
+import { StartScene } from './scenes/StartScene.js';
+import { ReadyScene } from './scenes/ReadyScene.js';
+import { GameScene } from './scenes/GameScene.js';
+import { FallingScene } from './scenes/FallingScene.js';
+import { GameOverScene } from './scenes/GameOverScene.js';
 
 const GameConfig = {
-  canvas: { width: 500, height: 600 },
-  bird: { x: 150, radius: 17, gravity: 0.4, jumpForce: -7 },
-  tubes: { width: 78, gap: 130, minimum: 130, speed: 3.0, spacing: 250 },
-  background: { groundSpeed: 3.0 },
-  hover: { frequency: 3, amplitude: 8 }
+  canvas: { width: 288, height: 512 },
+  bird: {
+    x: 90,
+    radius: 15,
+    gravity: 900,
+    tapVelocity: -260
+  },
+  tubes: {
+    width: 52,
+    height: 320,
+    gap: 110,
+    speed: 90,
+    spacing: 420,
+    spawnInterval: 2.0
+  }
 };
 
 export default class Game {
@@ -20,354 +36,252 @@ export default class Game {
     this.container = container;
     this.width = GameConfig.canvas.width;
     this.height = GameConfig.canvas.height;
-    
+
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.width;
     this.canvas.height = this.height;
     this.canvas.style.maxWidth = '100%';
     this.canvas.style.maxHeight = '100vh';
     this.container.appendChild(this.canvas);
-    
+
     this.ctx = this.canvas.getContext('2d', { alpha: false });
-    
-    this.gameState = 'loading';
-    this.font = null;
-    this.lastTime = 0;
-    this.gameStarted = false;
-    this.hoverTime = 0;
-    this.hoverOffset = 0;
-    
-    this.bird = null;
-    this.tubes = null;
-    this.score = null;
-    this.background = new Background(this.width, this.height, GameConfig.background.groundSpeed);
-    this.particles = new ParticleSystem();
-    this.screenShake = new ScreenShake();
+
+    this.atlas = new AtlasLoader();
+    this.renderer = new SpriteRenderer(this.ctx, this.atlas);
     this.sounds = {};
-    
-    this.highScore = getHighScore();
+
+    this.gameState = GameState.START;
+    this.currentScene = null;
+    this.lastScore = 0;
     this.currentScore = 0;
-    
+    this.firstDeath = true;
+
+    this.bird = new Bird({ ...GameConfig.bird, canvasHeight: this.height });
+    this.bird.y = this.height / 2;
+
+    this.tubes = new Tubes({ ...GameConfig.tubes, canvasHeight: this.height, canvasWidth: this.width });
+    this.ground = new Ground(this.width, this.height, WorldSpeed.GROUND);
+    this.background = new Background(this.width, this.height, WorldSpeed.GROUND);
+
+    this.highScore = getHighScore();
+    this.lastTime = 0;
+
+    this.fading = false;
+    this.fadeAlpha = 0;
+    this.fadeTimer = 0;
+    this.nextState = null;
+
+    this.scenes = {
+      [GameState.START]: new StartScene(this),
+      [GameState.READY]: new ReadyScene(this),
+      [GameState.PLAYING]: new GameScene(this),
+      [GameState.FALLING]: new FallingScene(this),
+      [GameState.GAME_OVER]: new GameOverScene(this)
+    };
+
     this.setupInput();
     this.loadAssets();
     this.start();
   }
-  
+
   async loadAssets() {
-    try {
-      const [sounds, font] = await Promise.all([
-        loadSounds(),
-        loadFont(`${import.meta.env.BASE_URL}assets/flappy-font.ttf`)
-      ]);
-      
-      this.sounds = sounds;
-      this.font = font;
-      this.initGame();
-      this.gameState = 'menu';
-    } catch (error) {
-      console.error('Failed to load assets:', error);
-      this.gameState = 'menu';
-      this.font = 'Arial';
-      this.initGame();
+    await this.atlas.load();
+
+    this.ground.setAtlas(this.atlas.atlasImage);
+    this.ground.setContext(this.ctx);
+    this.tubes.setAtlas(this.atlas.atlasImage);
+
+    this.sounds = await loadSounds();
+    this.transitionTo(GameState.START);
+  }
+
+  transitionTo(newState) {
+    if (this.currentScene) {
+      this.currentScene.onExit();
+    }
+
+    this.gameState = newState;
+    this.currentScene = this.scenes[newState];
+
+    if (this.currentScene) {
+      if (newState === GameState.READY) {
+        if (!this.firstDeath) {
+          this.bird.birdColor = Math.floor(Math.random() * 3);
+        }
+        this.bird.reset();
+        this.tubes.reset();
+        this.currentScore = 0;
+      }
+      if (newState === GameState.FALLING) {
+        this.bird.velocity = 0;
+      }
+      this.currentScene.onEnter(this.currentScore, this.highScore);
     }
   }
-  
-  initGame() {
-    this.bird = new Bird(GameConfig.bird.x, this.height / 2, this.height, GameConfig.bird.gravity, GameConfig.bird.jumpForce);
-    this.tubes = new Tubes(this.width, this.height, GameConfig.tubes);
-    this.score = new Score();
-    this.currentScore = 0;
-    this.hoverTime = 0;
-    this.hoverOffset = 0;
+
+  triggerFadeToReady() {
+    if (this.fading === true) return;
+    this.fadeAlpha = 0;
+    this.fadeTimer = 0;
+    this.fading = true;
+    this.nextState = GameState.READY;
   }
-  
+
+  transitionToFalling() {
+    this.bird.velocity = 0;
+    this.sounds.hit?.play();
+    this.transitionTo(GameState.FALLING);
+  }
+
+  triggerGameOver(playSound = true) {
+    this.firstDeath = false;
+
+    if (playSound) {
+      this.sounds.hit?.play();
+      this.sounds.die?.play();
+    }
+
+    this.lastScore = this.currentScore;
+
+    if (this.currentScore > this.highScore) {
+      this.highScore = this.currentScore;
+      setHighScore(this.highScore);
+    }
+
+    this.transitionTo(GameState.GAME_OVER);
+  }
+
   setupInput() {
-    const handleJump = (e) => {
+    const getCanvasCoords = (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+
+      let clientX, clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    };
+
+    const handleStart = (e) => {
       e.preventDefault();
-      
-      if (this.gameState === 'playing') {
-        if (this.bird) {
-          this.bird.jump();
-          this.sounds.wing?.play();
-          this.particles.emit(this.bird.x, this.bird.y, 3, {
-            colors: ['#FFE666', '#FFD93D'],
-            minVelocity: { x: -50, y: -80 },
-            maxVelocity: { x: 50, y: -40 },
-            minSize: 2,
-            maxSize: 5
-          });
-        }
-      } else if (this.gameState === 'menu') {
-        this.startGame();
-      } else if (this.gameState === 'ready') {
-        this.startPlaying();
-      } else if (this.gameState === 'gameover') {
-        this.restartGame();
+      const coords = getCanvasCoords(e);
+      if (this.currentScene) {
+        this.currentScene.handleInput(coords.x, coords.y);
       }
     };
-    
-    this.canvas.addEventListener('mousedown', handleJump);
-    this.canvas.addEventListener('touchstart', handleJump, { passive: false });
-    
+
+    const handleEnd = (e) => {
+      e.preventDefault();
+      const coords = getCanvasCoords(e);
+      if (this.currentScene) {
+        this.currentScene.handleRelease(coords.x, coords.y);
+      }
+    };
+
+    this.canvas.addEventListener('mousedown', handleStart);
+    this.canvas.addEventListener('mouseup', handleEnd);
+    this.canvas.addEventListener('touchstart', handleStart, { passive: false });
+    this.canvas.addEventListener('touchend', handleEnd, { passive: false });
+    this.canvas.addEventListener('touchmove', handleStart, { passive: false });
+
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'Enter') {
-        handleJump(e);
+        handleStart(e);
       }
     });
+
+    document.body.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
   }
-  
-  startGame() {
-    this.gameState = 'ready';
-    this.initGame();
-  }
-  
-  startPlaying() {
-    this.gameState = 'playing';
-    if (this.bird) {
-      this.bird.jump();
-      this.sounds.wing?.play();
-      this.particles.emit(this.bird.x, this.bird.y, 3, {
-        colors: ['#FFE666', '#FFD93D'],
-        minVelocity: { x: -50, y: -80 },
-        maxVelocity: { x: 50, y: -40 },
-        minSize: 2,
-        maxSize: 5
-      });
-    }
-  }
-  
-  restartGame() {
-    if (this.currentScore > this.highScore) {
-      this.highScore = this.currentScore;
-      setHighScore(this.highScore);
-    }
-    this.startGame();
-  }
-  
-  gameOver() {
-    this.gameState = 'gameover';
-    this.sounds.hit?.play();
-    this.sounds.die?.play();
-    
-    this.screenShake.shake(10, 0.3);
-    
-    this.particles.emit(this.bird.x, this.bird.y, 12, {
-      colors: ['#FFE666', '#FF6B6B', '#FFD93D'],
-      minVelocity: { x: -150, y: -200 },
-      maxVelocity: { x: 150, y: -50 },
-      minSize: 3,
-      maxSize: 8
-    });
-    
-    if (this.currentScore > this.highScore) {
-      this.highScore = this.currentScore;
-      setHighScore(this.highScore);
-    }
-  }
-  
+
   update(deltaTime) {
-    const speedMultiplier = this.gameState === 'playing' ? 1 : 0.2;
-    this.background.update(deltaTime, speedMultiplier);
-    this.particles.update(deltaTime);
-    this.screenShake.update(deltaTime);
-    
-    if (!this.bird || !this.tubes) {
+    if (!this.atlas.loaded) return;
+
+    if (this.fading === true) {
+      this.fadeTimer += deltaTime;
+      if (this.fadeTimer < 0.2) {
+        this.fadeAlpha = this.fadeTimer / 0.2;
+      } else if (this.fadeTimer >= 0.2) {
+        this.transitionTo(this.nextState);
+        this.fading = 'out';
+        this.fadeTimer = 0;
+      }
       return;
     }
-    
-    if (this.gameState === 'ready') {
-      this.hoverTime += deltaTime;
-      this.hoverOffset = Math.sin(this.hoverTime * 3) * 8;
-    } else if (this.gameState === 'playing') {
-      this.bird.update();
-      this.tubes.update(true);
-      
-      if (this.bird.checkCollision(this.tubes)) {
-        this.gameOver();
+
+    if (this.fading === 'out') {
+      this.fadeTimer += deltaTime;
+      this.fadeAlpha = 1 - Math.min(this.fadeTimer / 0.2, 1);
+      if (this.fadeTimer >= 0.2) {
+        this.fading = false;
       }
-      
-      if (this.tubes.checkScore(this.bird)) {
-        this.currentScore++;
-        this.sounds.point?.play();
-        this.particles.emit(this.bird.x, 50, 6, {
-          colors: ['#4CAF50', '#66BB6A', '#81C784'],
-          minVelocity: { x: -80, y: -100 },
-          maxVelocity: { x: 80, y: -30 },
-          minSize: 3,
-          maxSize: 6
-        });
-      }
-    } else if (this.gameState === 'gameover') {
-      this.bird.update();
-      this.tubes.update(false);
+    }
+
+    const shouldMove = this.gameState === GameState.START || this.gameState === GameState.READY || this.gameState === GameState.PLAYING;
+    const speedMultiplier = shouldMove ? 1 : 0;
+    this.ground.update(deltaTime, speedMultiplier);
+
+    if (this.currentScene) {
+      this.currentScene.update(deltaTime);
     }
   }
-  
+
   draw() {
-    const shake = this.screenShake.getShake();
-    
-    this.ctx.save();
-    this.ctx.translate(shake.x, shake.y);
-    
-    this.ctx.clearRect(-shake.x, -shake.y, this.width, this.height);
-    
-    this.background.draw(this.ctx);
-    
-    if (this.tubes) {
-      this.tubes.draw(this.ctx);
-    }
-    
-    if (this.bird) {
-      this.bird.draw(this.ctx, this.gameState === 'ready' ? this.hoverOffset : 0);
-    }
-    
-    this.particles.draw(this.ctx);
-    
-    if (this.score) {
-      this.score.draw(this.ctx, this.currentScore, this.font);
-    }
-    
-    if (this.gameState === 'loading') {
+    this.ctx.clearRect(0, 0, this.width, this.height);
+
+    if (!this.atlas.loaded) {
       this.drawLoading();
-    } else if (this.gameState === 'menu') {
-      this.drawMenu();
-    } else if (this.gameState === 'ready') {
-      this.drawReady();
-    } else if (this.gameState === 'gameover') {
-      this.drawGameOver();
+      return;
     }
-    
-    this.ctx.restore();
+
+    if (this.currentScene) {
+      this.currentScene.draw(this.ctx);
+    }
+
+    if (this.fading === true || this.fading === 'out') {
+      this.ctx.fillStyle = `rgba(0, 0, 0, ${this.fadeAlpha})`;
+      this.ctx.fillRect(0, 0, this.width, this.height);
+    }
   }
-  
+
   drawLoading() {
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillStyle = '#70c5ce';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
-    const x = this.width / 2;
-    const y = this.height / 2;
-    
-    this.ctx.font = `bold 48px ${this.font || 'Arial'}`;
+
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = '24px Arial';
     this.ctx.textAlign = 'center';
-    
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.lineJoin = 'round';
-    this.ctx.strokeText('Loading...', x, y);
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillText('Loading...', x, y);
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillText('Loading...', this.width / 2, this.height / 2);
   }
-  
-  drawMenu() {
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    this.ctx.fillRect(0, 0, this.width, this.height);
-    
-    const x = this.width / 2;
-    const y = this.height / 2;
-    
-    this.ctx.textAlign = 'center';
-    
-    this.drawOutlinedText('Flappy JS', x, y - 20, `bold 60px ${this.font || 'Arial'}`);
-    this.drawOutlinedText('Tap or press Space to start', x, y + 50, `32px ${this.font || 'Arial'}`);
-  }
-  
-  drawOutlinedText(text, x, y, font) {
-    this.ctx.font = font;
-    this.ctx.fillStyle = 'white';
-    this.ctx.shadowColor = 'black';
-    this.ctx.shadowBlur = 3;
-    this.ctx.shadowOffsetX = 2;
-    this.ctx.shadowOffsetY = 2;
-    this.ctx.fillText(text, x, y);
-    this.ctx.shadowBlur = 0;
-    this.ctx.shadowOffsetX = 0;
-    this.ctx.shadowOffsetY = 0;
-  }
-  
-  drawReady() {
-    const x = this.width / 2;
-    const y = this.height / 2;
-    
-    this.drawOutlinedText('Get Ready!', x, y - 20, `bold 60px ${this.font || 'Arial'}`);
-    this.drawOutlinedText('Tap or press Space to start', x, y + 50, `32px ${this.font || 'Arial'}`);
-  }
-  
-  drawGameOver() {
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.ctx.fillRect(0, 0, this.width, this.height);
-    
-    const x = this.width / 2;
-    const y = this.height / 2;
-    
-    this.drawOutlinedText('Game Over', x, y - 90, `bold 60px ${this.font || 'Arial'}`);
-    this.drawOutlinedText(`Score: ${this.currentScore}`, x, y - 10, `30px ${this.font || 'Arial'}`);
-    this.drawOutlinedText(`Best: ${this.highScore}`, x, y + 30, `30px ${this.font || 'Arial'}`);
-    this.drawOutlinedText('Tap or press Space to restart', x, y + 90, `28px ${this.font || 'Arial'}`);
-  }
-  
+
   start() {
-    this.accumulatedTime = 0;
-    this.fixedTimeStep = 1/60;
-    
+    this.lastTime = performance.now();
+
     const gameLoop = (timestamp) => {
-      const deltaTime = Math.min((timestamp - this.lastTime) / 1000, 0.05);
+      const deltaTime = Math.min((timestamp - this.lastTime) / 1000, 1 / 30);
       this.lastTime = timestamp;
-      
-      this.accumulatedTime += deltaTime;
-      
-      while (this.accumulatedTime >= this.fixedTimeStep) {
-        this.updateGameLogic();
-        this.accumulatedTime -= this.fixedTimeStep;
-      }
-      
-      this.updateVisuals(deltaTime);
+
+      this.update(deltaTime);
       this.draw();
-      
+
       requestAnimationFrame(gameLoop);
     };
-    
-    this.lastTime = performance.now();
+
     requestAnimationFrame(gameLoop);
-  }
-  
-  updateGameLogic() {
-    if (!this.bird || !this.tubes) {
-      return;
-    }
-    
-    if (this.gameState === 'ready') {
-      this.hoverTime += this.fixedTimeStep;
-      this.hoverOffset = Math.sin(this.hoverTime * GameConfig.hover.frequency) * GameConfig.hover.amplitude;
-    } else if (this.gameState === 'playing') {
-      this.bird.update();
-      this.tubes.update(true);
-      
-      if (this.bird.checkCollision(this.tubes)) {
-        this.gameOver();
-      }
-      
-      if (this.tubes.checkScore(this.bird)) {
-        this.currentScore++;
-        this.sounds.point?.play();
-        this.particles.emit(this.bird.x, 50, 6, {
-          colors: ['#4CAF50', '#66BB6A', '#81C784'],
-          minVelocity: { x: -80, y: -100 },
-          maxVelocity: { x: 80, y: -30 },
-          minSize: 3,
-          maxSize: 6
-        });
-      }
-    } else if (this.gameState === 'gameover') {
-      this.bird.update();
-      this.tubes.update(false);
-    }
-  }
-  
-  updateVisuals(deltaTime) {
-    const speedMultiplier = this.gameState === 'playing' ? 1 : 0.2;
-    this.background.update(deltaTime, speedMultiplier);
-    this.particles.update(deltaTime);
-    this.screenShake.update(deltaTime);
   }
 }
