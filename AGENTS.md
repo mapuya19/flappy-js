@@ -48,6 +48,12 @@ npm run lint     # Run ESLint on src/
 - Configuration constants defined at module level using UPPER_SNAKE_CASE for maintainability
 - Reset methods named `reset()` for entity state restoration
 
+### Constants
+- Define all constants at the top of the file, before any class definitions
+- Use UPPER_SNAKE_CASE naming convention
+- Group related constants together in config objects (e.g., `GameConfig`, `BirdConfig`)
+- Place module-level constants after imports but before class definitions
+
 ### Naming
 - Class names: PascalCase
 - Methods: camelCase
@@ -184,6 +190,7 @@ Configuration is distributed across individual modules for maintainability:
 7. **Font rendering**: Numbers use sprite font from atlas (`font_048` through `font_057`), not TTF fonts
 8. **Screen shake**: Apply offset to entire canvas, restore after drawing all elements
 9. **Animation timing**: Use ease functions for smooth UI transitions
+10. **Event listener cleanup**: Not required for window event listeners since page reloads on code changes during development
 
 ## Testing
 

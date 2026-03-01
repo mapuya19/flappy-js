@@ -15,6 +15,7 @@ import { GameOverScene } from './scenes/GameOverScene.js';
 
 const GameConfig = {
   canvas: { width: 288, height: 512 },
+  responsive: { maxWidth: 932, maxHeight: 1290 },
   bird: {
     x: 90,
     radius: 15,
@@ -54,9 +55,8 @@ export default class Game {
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.width;
     this.canvas.height = this.height;
-    this.canvas.style.maxWidth = '100%';
-    this.canvas.style.maxHeight = '100vh';
     this.container.appendChild(this.canvas);
+    this.setupResponsiveScaling();
 
     this.ctx = this.canvas.getContext('2d', { alpha: false });
 
@@ -96,6 +96,21 @@ export default class Game {
     this.setupInput();
     this.loadAssets();
     this.start();
+  }
+
+  setupResponsiveScaling() {
+    const updateScale = () => {
+      const scaleWidth = Math.min(window.innerWidth, GameConfig.responsive.maxWidth) / this.width;
+      const scaleHeight = Math.min(window.innerHeight, GameConfig.responsive.maxHeight) / this.height;
+      const scale = Math.min(scaleWidth, scaleHeight);
+
+      this.canvas.style.width = `${this.width * scale}px`;
+      this.canvas.style.height = `${this.height * scale}px`;
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    window.addEventListener('orientationchange', updateScale);
   }
 
   async loadAssets() {
