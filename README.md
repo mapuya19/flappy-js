@@ -26,13 +26,6 @@ This implementation replicates **Flappy Bird v1.2/1.3** (iOS) behavior.
 
 **Archive**: [Flappy Bird v1.3 Archive](https://archive.org/details/flappy-bird-v-1.3)
 
-### Physics & Gameplay:
-- **Bird gravity**: 900 units/s²
-- **Rotation formula**: `velocity * 0.2 + 60`, clamped to [-90°, 30°]
-- **Pipe gap**: 135px
-- **Score timing**: When bird's back end crosses pipe center (+16px offset)
-- **Jump velocity**: -260 units/s
-
 ## Features
 
 - Modern tech stack: ES6+ JavaScript, Vite, Canvas API
@@ -101,24 +94,6 @@ public/
     └── *.m4a             # Sound files
 ```
 
-## Architecture
-
-### Scene System
-The game uses a scene-based architecture where each game state (Start, Ready, Playing, Falling, Game Over) is handled by a dedicated scene class. All scenes extend `BaseScene` and implement:
-
-- `onEnter()` - Scene initialization
-- `onExit()` - Scene cleanup
-- `update(deltaTime)` - Game logic updates
-- `draw(ctx)` - Rendering
-- `handleInput(x, y)` - Input handling
-- `handleRelease(x, y)` - Input release handling
-
-### Sprite Atlas
-All game assets are loaded from a sprite atlas (`atlas.png` with `atlas.json` metadata) for efficient rendering. Sprites are referenced by name and rendered via `SpriteRenderer`.
-
-### Game Loop
-Delta time-based updates ensure consistent gameplay across different frame rates. The loop is capped at 30 FPS minimum for consistency.
-
 ## Deployment
 
 The game is automatically deployed to GitHub Pages via GitHub Actions:
@@ -133,9 +108,9 @@ npm run build
 # Upload contents of dist/ to your hosting provider
 ```
 
-## Original Version
+## Original Build
 
-The original 2020 version was built with Processing and p5.js. View it here: [github.com/mapuya19/flappy](https://github.com/mapuya19/flappy)
+My original 2020 version was built with Processing and p5.js. View it here: [github.com/mapuya19/flappy](https://github.com/mapuya19/flappy)
 
 ## License
 
