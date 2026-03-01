@@ -11,17 +11,24 @@ export class GameOverScene extends BaseScene {
     this.scorePanel = null;
     this.animationTimer = 0;
     this.gameOverY = 0;
+    this.gameOverAlpha = 0;
     this.panelY = 0;
     this.buttonsY = 0;
+    this.buttonTargetY = 0;
+    this.scoreAnimationStarted = false;
   }
 
   onEnter(currentScore, bestScore) {
     const midX = this.game.width / 2;
+    const buttonY = this.game.height * 0.735;
 
     this.animationTimer = 0;
     this.gameOverY = -30;
+    this.gameOverAlpha = 0;
     this.panelY = this.game.height + 150;
     this.buttonsY = this.game.height + 80;
+    this.buttonTargetY = buttonY;
+    this.scoreAnimationStarted = false;
 
     this.scorePanel = new ScorePanel(this.renderer, midX, this.game.height / 2);
 
@@ -29,7 +36,7 @@ export class GameOverScene extends BaseScene {
       this.renderer,
       'button_play',
       midX - 60,
-      400,
+      buttonY,
       () => this.restart()
     );
 
@@ -37,7 +44,7 @@ export class GameOverScene extends BaseScene {
       this.renderer,
       'button_score',
       midX + 60,
-      400,
+      buttonY,
       () => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')
     );
 
@@ -60,36 +67,57 @@ export class GameOverScene extends BaseScene {
       this.scorePanel.update(deltaTime);
     }
 
-    const gameOverTarget = this.game.height * 0.25;
+    const gameOverTarget = this.game.height * 0.30;
     const panelTarget = this.game.height / 2;
-    const buttonsTarget = 400;
+    const buttonsTarget = this.buttonTargetY;
 
     if (this.animationTimer < 0.5) {
-      this.gameOverY = this.gameOverY; // eslint-disable-line no-self-assign
-    } else if (this.animationTimer < 1.0) {
-      const t = (this.animationTimer - 0.5) / 0.5;
+      this.gameOverY = gameOverTarget;
+      this.gameOverAlpha = 0;
+    } else if (this.animationTimer < 0.8) {
+      const t = (this.animationTimer - 0.5) / 0.3;
+      this.gameOverAlpha = t;
+      const bounceT = (this.animationTimer - 0.5) / 0.3;
+      const bounceEase = bounceT * (2 - bounceT);
+      this.gameOverY = gameOverTarget * (1 - bounceEase) + (gameOverTarget - 15) * bounceEase;
+    } else if (this.animationTimer < 1.2) {
+      const t = (this.animationTimer - 0.8) / 0.4;
       const ease = t * (2 - t);
-      this.gameOverY = (-30) * (1 - ease) + gameOverTarget * ease;
+      this.gameOverY = (gameOverTarget - 15) * (1 - ease) + gameOverTarget * ease;
+      this.gameOverAlpha = 1;
     } else {
       this.gameOverY = gameOverTarget;
+      this.gameOverAlpha = 1;
     }
 
     if (this.animationTimer < 1.0) {
       this.panelY = this.game.height + 150;
-    } else if (this.animationTimer < 1.6) {
-      const t = (this.animationTimer - 1.0) / 0.6;
-      const ease = t * (2 - t);
+    } else if (this.animationTimer < 1.5) {
+      const t = (this.animationTimer - 1.0) / 0.5;
+      const ease = t * t * (3 - 2 * t);
       this.panelY = (this.game.height + 150) * (1 - ease) + panelTarget * ease;
     } else {
       this.panelY = panelTarget;
     }
 
-    if (this.animationTimer < 1.6) {
+    if (this.animationTimer >= 1.6 && !this.scoreAnimationStarted && this.scorePanel.currentScore > 0) {
+      this.scorePanel.startScoreAnimation();
+      this.scoreAnimationStarted = true;
+    }
+
+    const scoreAnimationComplete = this.scorePanel.isScoreAnimationComplete();
+    let showButtonsAtTime;
+
+    if (this.scorePanel.currentScore === 0) {
+      showButtonsAtTime = 1.6;
+    } else if (scoreAnimationComplete) {
+      showButtonsAtTime = 2.2;
+    } else {
+      showButtonsAtTime = 2.2;
+    }
+
+    if (this.animationTimer < showButtonsAtTime) {
       this.buttonsY = this.game.height + 80;
-    } else if (this.animationTimer < 2.1) {
-      const t = (this.animationTimer - 1.6) / 0.5;
-      const ease = t * (2 - t);
-      this.buttonsY = (this.game.height + 80) * (1 - ease) + buttonsTarget * ease;
     } else {
       this.buttonsY = buttonsTarget;
     }
@@ -102,10 +130,6 @@ export class GameOverScene extends BaseScene {
       this.game.tubes.draw(this.ctx);
     }
 
-    if (this.game.ground) {
-      this.game.ground.draw();
-    }
-
     if (this.game.bird) {
       const birdSprite = this.game.bird.getSpriteName();
       this.renderer.drawSprite(
@@ -116,8 +140,12 @@ export class GameOverScene extends BaseScene {
       );
     }
 
+    if (this.game.ground) {
+      this.game.ground.draw();
+    }
+
     if (this.animationTimer >= 0.2) {
-      this.renderer.drawSprite('text_game_over', this.game.width / 2, this.gameOverY);
+      this.renderer.drawSprite('text_game_over', this.game.width / 2, this.gameOverY, { alpha: this.gameOverAlpha });
     }
 
     if (this.animationTimer >= 1.0) {
@@ -127,7 +155,7 @@ export class GameOverScene extends BaseScene {
       }
     }
 
-    if (this.animationTimer >= 1.6) {
+    if (this.animationTimer >= 2.2) {
       if (this.playButton) {
         this.playButton.y = this.buttonsY;
         this.playButton.draw();
@@ -140,7 +168,18 @@ export class GameOverScene extends BaseScene {
   }
 
   handleInput(x, y) {
-    if (this.animationTimer >= 2.5) {
+    const scoreAnimationComplete = this.scorePanel.isScoreAnimationComplete();
+    let enableInputAtTime;
+
+    if (this.scorePanel.currentScore === 0) {
+      enableInputAtTime = 1.6;
+    } else if (scoreAnimationComplete) {
+      enableInputAtTime = 2.2;
+    } else {
+      enableInputAtTime = 2.2;
+    }
+
+    if (this.animationTimer >= enableInputAtTime) {
       if (this.playButton && this.playButton.handleInput(x, y)) return true;
       if (this.scoreButton && this.scoreButton.handleInput(x, y)) return true;
     }
@@ -148,7 +187,18 @@ export class GameOverScene extends BaseScene {
   }
 
   handleRelease(x, y) {
-    if (this.animationTimer >= 2.5) {
+    const scoreAnimationComplete = this.scorePanel.isScoreAnimationComplete();
+    let enableInputAtTime;
+
+    if (this.scorePanel.currentScore === 0) {
+      enableInputAtTime = 1.6;
+    } else if (scoreAnimationComplete) {
+      enableInputAtTime = 2.2;
+    } else {
+      enableInputAtTime = 2.2;
+    }
+
+    if (this.animationTimer >= enableInputAtTime) {
       if (this.playButton && this.playButton.handleRelease(x, y)) return true;
       if (this.scoreButton && this.scoreButton.handleRelease(x, y)) return true;
     }

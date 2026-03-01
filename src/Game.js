@@ -24,7 +24,7 @@ const GameConfig = {
   tubes: {
     width: 52,
     height: 320,
-    gap: 110,
+    gap: 125,
     speed: 90,
     spacing: 420,
     spawnInterval: 2.0

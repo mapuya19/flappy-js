@@ -25,7 +25,7 @@ export default class Bird {
     this.velocity += this.gravity * deltaTime;
     this.y += this.velocity * deltaTime;
 
-    const targetRotation = Math.min(Math.max(this.velocity * 0.12 - 25, -90), 90) * Math.PI / 180;
+    const targetRotation = Math.min(Math.max(this.velocity * 0.2 - 60, -30), 90) * Math.PI / 180;
     this.rotation += (targetRotation - this.rotation) * 0.15;
 
     this.frameTimer += deltaTime;
@@ -37,6 +37,14 @@ export default class Bird {
 
   jump() {
     this.velocity = this.tapVelocity;
+  }
+
+  updateAnimation(deltaTime) {
+    this.frameTimer += deltaTime;
+    if (this.frameTimer >= 0.1) {
+      this.currentFrame = (this.currentFrame + 1) % 3;
+      this.frameTimer = 0;
+    }
   }
 
   getSpriteName() {

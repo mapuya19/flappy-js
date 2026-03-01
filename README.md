@@ -8,6 +8,31 @@ A modernized Flappy Bird game built with vanilla JavaScript and Canvas API. Orig
 </p>
 <p align="center"><small>Left: Original 2020 version • Right: Modern 2026 rebuild</small></p>
 
+## Version Compatibility
+
+This implementation replicates **Flappy Bird v1.2/1.3** (iOS) behavior.
+
+| v1.0 / v1.1 Era | v1.2 / v1.3 Era |
+|---|---|
+| Single yellow bird sprite | ✅ Multiple bird colors (Yellow, Blue, Red) - randomly selected |
+| Lower frame rate (choppy) | ✅ Higher frame rate (smoother gameplay) |
+| Simple UI/menus | ✅ Redesigned UI with cleaner layouts |
+| Basic green pipes | ✅ Polished green pipe sprites |
+| Single theme | ✅ Day & Night theme toggle |
+| Pause button present | ❌ Pause button removed |
+| Ads mid-game | ✅ Ads only on start/end screens |
+| Simple start/score screen | ✅ Revamped UI with bigger buttons |
+| Title says "Flap Flap" | ✅ Fixed title says "Flappy Bird" |
+
+**Archive**: [Flappy Bird v1.3 Archive](https://archive.org/details/flappy-bird-v-1.3)
+
+### Physics & Gameplay:
+- **Bird gravity**: 900 units/s²
+- **Rotation formula**: `velocity * 0.2 + 60`, clamped to [-90°, 30°]
+- **Pipe gap**: 135px
+- **Score timing**: When bird's back end crosses pipe center (+16px offset)
+- **Jump velocity**: -260 units/s
+
 ## Features
 
 - Modern tech stack: ES6+ JavaScript, Vite, Canvas API

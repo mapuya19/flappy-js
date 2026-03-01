@@ -37,7 +37,7 @@ export default class Tubes {
       const pipe = this.pipes[i];
       pipe.x -= this.speed * deltaTime;
 
-      if (this.pipeStates[i] === 0 && pipe.x < birdX) {
+      if (this.pipeStates[i] === 0 && pipe.x < birdX + 16) {
         this.pipeStates[i] = 1;
         scored = true;
       }

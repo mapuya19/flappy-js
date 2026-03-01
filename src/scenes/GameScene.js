@@ -69,15 +69,24 @@ export class GameScene extends BaseScene {
 
   drawScore() {
     const scoreStr = this.score.toString();
-    const digitWidth = 20;
-    const totalWidth = scoreStr.length * digitWidth;
-    let currentX = this.game.width / 2 - totalWidth / 2;
     const y = this.game.height * 0.15 + 10;
 
+    const digitWidths = [];
     for (const digit of scoreStr) {
       const spriteName = `font_0${48 + parseInt(digit)}`;
+      const size = this.renderer.getSpriteSize(spriteName);
+      digitWidths.push(size.width);
+    }
+
+    const totalWidth = digitWidths.reduce((sum, width) => sum + width, 0);
+    let currentX = this.game.width / 2 - totalWidth / 2 + digitWidths[0] / 2;
+
+    for (let i = 0; i < scoreStr.length; i++) {
+      const digit = scoreStr[i];
+      const spriteName = `font_0${48 + parseInt(digit)}`;
       this.renderer.drawSprite(spriteName, currentX, y);
-      currentX += digitWidth;
+      const nextWidth = digitWidths[i + 1] || 0;
+      currentX += digitWidths[i] / 2 + nextWidth / 2;
     }
   }
 

@@ -1,4 +1,5 @@
 import { BaseScene } from './BaseScene.js';
+import ScreenShake from '../utils/ScreenShake.js';
 
 export class FallingScene extends BaseScene {
   constructor(game) {
@@ -7,6 +8,7 @@ export class FallingScene extends BaseScene {
     this.groundTimer = 0;
     this.fallSpeed = 0;
     this.flashTimer = 0;
+    this.screenShake = new ScreenShake(8, 0.4);
   }
 
   onEnter() {
@@ -16,11 +18,14 @@ export class FallingScene extends BaseScene {
     this.hitGround = false;
     this.groundTimer = 0;
     this.game.sounds.die?.play();
+    this.screenShake.shake(8, 0.4);
   }
 
   update(deltaTime) {
     const groundY = this.game.height - this.game.ground.groundHeight;
     const groundSurface = groundY - 12;
+
+    this.screenShake.update(deltaTime);
 
     const targetRotation = 90 * Math.PI / 180;
     this.game.bird.rotation += (targetRotation - this.game.bird.rotation) * 0.15;
@@ -30,7 +35,7 @@ export class FallingScene extends BaseScene {
       this.game.bird.y += this.fallSpeed * deltaTime;
 
       if (this.game.bird.y >= groundSurface) {
-        this.game.bird.y = groundSurface + 5;
+        this.game.bird.y = groundSurface + 3;
         this.hitGround = true;
       }
     } else {
@@ -42,14 +47,14 @@ export class FallingScene extends BaseScene {
   }
 
   draw(_ctx) {
+    const shake = this.screenShake.getShake();
+    this.ctx.save();
+    this.ctx.translate(shake.x, shake.y);
+
     this.renderer.drawSprite('bg_day', this.game.width / 2, this.game.height / 2);
 
     if (this.game.tubes) {
       this.game.tubes.draw(this.ctx);
-    }
-
-    if (this.game.ground) {
-      this.game.ground.draw();
     }
 
     const birdSprite = this.game.bird.getSpriteName();
@@ -59,6 +64,12 @@ export class FallingScene extends BaseScene {
       this.game.bird.y,
       { rotation: this.game.bird.rotation }
     );
+
+    if (this.game.ground) {
+      this.game.ground.draw();
+    }
+
+    this.ctx.restore();
 
     this.flashTimer += 0.033;
     if (this.flashTimer < 0.25) {

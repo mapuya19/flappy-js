@@ -13,7 +13,7 @@ export class StartScene extends BaseScene {
 
   onEnter() {
     const midX = this.game.width / 2;
-    const buttonY = this.game.height * 0.75;
+    const buttonY = this.game.height * 0.735;
 
     this.playButton = new Button(
       this.renderer,
@@ -27,7 +27,7 @@ export class StartScene extends BaseScene {
       this.renderer,
       'button_rate',
       midX,
-      this.game.height * 0.60,
+      this.game.height * 0.575,
       () => window.open('https://github.com/mapuya19/flappy-js', '_blank')
     );
 
@@ -50,7 +50,8 @@ export class StartScene extends BaseScene {
 
   update(deltaTime) {
     this.birdTimer += deltaTime;
-    this.birdY = Math.sin(this.birdTimer * 3) * 8;
+    this.birdY = Math.sin(this.birdTimer * 7) * 4;
+    this.game.bird.updateAnimation(deltaTime);
   }
 
   draw(_ctx) {
@@ -60,14 +61,14 @@ export class StartScene extends BaseScene {
       this.game.ground.draw();
     }
 
-    const birdColor = this.game.bird ? this.game.bird.birdColor : 0;
+    const birdSprite = this.game.bird.getSpriteName();
     this.renderer.drawSprite(
-      `bird${birdColor}_0`,
+      birdSprite,
       this.game.width / 2,
       this.game.height * 0.45 + this.birdY
     );
 
-    this.renderer.drawSprite('title', this.game.width / 2, this.game.height * 0.25);
+    this.renderer.drawSprite('title', this.game.width / 2, this.game.height * 0.33);
 
     if (this.playButton) this.playButton.draw();
     if (this.rateButton) this.rateButton.draw();

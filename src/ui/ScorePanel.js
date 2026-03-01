@@ -5,22 +5,32 @@ export class ScorePanel {
     this.y = y;
     this.visible = false;
     this.currentScore = 0;
+    this.displayScore = 0;
     this.bestScore = 0;
     this.medal = null;
     this.showNew = false;
     this.animationTime = 0;
     this.currentY = y;
+    this.scoreAnimationTime = 0;
+    this.scoreAnimationDuration = 0;
+    this.scoreAnimating = false;
+    this.panelMovedIn = false;
   }
 
   show(currentScore, bestScore) {
     this.visible = true;
     this.currentScore = currentScore;
+    this.displayScore = 0;
     this.bestScore = bestScore;
     // this.medal = 'medals_1' // test medals
     this.medal = this.getMedal(currentScore);
     this.showNew = currentScore > bestScore;
     this.animationTime = 0;
     this.currentY = -100;
+    this.scoreAnimating = false;
+    this.panelMovedIn = false;
+    this.scoreAnimationTime = 0;
+    this.scoreAnimationDuration = currentScore > 0 ? 0.5 : 0;
   }
 
   hide() {
@@ -35,6 +45,17 @@ export class ScorePanel {
     return null;
   }
 
+  startScoreAnimation() {
+    if (this.currentScore > 0) {
+      this.scoreAnimating = true;
+      this.scoreAnimationTime = 0;
+    }
+  }
+
+  isScoreAnimationComplete() {
+    return !this.scoreAnimating && this.currentScore > 0;
+  }
+
   update(deltaTime) {
     if (!this.visible) return;
 
@@ -46,6 +67,20 @@ export class ScorePanel {
       this.currentY = -100 + (this.y + 100) * easeProgress;
     } else {
       this.currentY = this.y;
+      if (!this.panelMovedIn) {
+        this.panelMovedIn = true;
+      }
+    }
+
+    if (this.scoreAnimating) {
+      this.scoreAnimationTime += deltaTime;
+      if (this.scoreAnimationTime < this.scoreAnimationDuration) {
+        const progress = this.scoreAnimationTime / this.scoreAnimationDuration;
+        this.displayScore = Math.floor(this.currentScore * progress);
+      } else {
+        this.displayScore = this.currentScore;
+        this.scoreAnimating = false;
+      }
     }
   }
 
@@ -62,15 +97,17 @@ export class ScorePanel {
       this.renderer.drawSprite('new', this.x - 70, this.currentY - 55);
     }
 
-    this.drawScore(this.currentScore, this.x + 80, this.currentY - 17);
-    this.drawScore(this.bestScore, this.x + 80, this.currentY + 25);
+    this.drawScore(this.displayScore, this.x + 80, this.currentY - 17);
+
+    const bestScoreToShow = this.showNew ? this.currentScore : this.bestScore;
+    this.drawScore(bestScoreToShow, this.x + 80, this.currentY + 25);
   }
 
   drawScore(score, x, y) {
     const scoreStr = score.toString();
-    const digitWidth = 14;
-    const totalWidth = scoreStr.length * digitWidth;
-    let currentX = x - totalWidth / 2;
+    const digitWidth = 15;
+    const numDigits = scoreStr.length;
+    let currentX = x - (numDigits - 1) * digitWidth;
 
     for (const digit of scoreStr) {
       const spriteName = `number_score_0${digit}`;
