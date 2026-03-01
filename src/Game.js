@@ -12,6 +12,7 @@ import { ReadyScene } from './scenes/ReadyScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { FallingScene } from './scenes/FallingScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
+import { LeaderboardScene } from './scenes/LeaderboardScene.js';
 
 const GameConfig = {
   canvas: { width: 288, height: 512 },
@@ -90,7 +91,8 @@ export default class Game {
       [GameState.READY]: new ReadyScene(this),
       [GameState.PLAYING]: new GameScene(this),
       [GameState.FALLING]: new FallingScene(this),
-      [GameState.GAME_OVER]: new GameOverScene(this)
+      [GameState.GAME_OVER]: new GameOverScene(this),
+      [GameState.SCOREBOARD]: new LeaderboardScene(this)
     };
 
     this.setupInput();
@@ -262,7 +264,7 @@ export default class Game {
       }
     }
 
-    const shouldMove = this.gameState === GameState.START || this.gameState === GameState.READY || this.gameState === GameState.PLAYING;
+    const shouldMove = this.gameState === GameState.START || this.gameState === GameState.READY || this.gameState === GameState.PLAYING || this.gameState === GameState.SCOREBOARD;
     const speedMultiplier = shouldMove ? 1 : 0;
     this.ground.update(deltaTime, speedMultiplier);
 

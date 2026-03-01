@@ -1,5 +1,6 @@
 import { BaseScene } from './BaseScene.js';
 import { Button } from '../ui/Button.js';
+import { GameState } from '../GameState.js';
 
 const StartSceneConfig = {
   BIRD: {
@@ -64,7 +65,8 @@ export class StartScene extends BaseScene {
   }
 
   transitionToScoreboard() {
-    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+    this.game.sounds.swoosh?.play();
+    this.game.transitionTo(GameState.SCOREBOARD);
   }
 
   update(deltaTime) {

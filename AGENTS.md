@@ -10,6 +10,8 @@ This is a modern Flappy Bird clone built with vanilla JavaScript, Canvas API, an
 - **Build Tool**: Vite
 - **Rendering**: HTML5 Canvas API
 - **Audio**: Web Audio API
+- **Database**: Turso (SQLite-compatible)
+- **Backend**: Cloudflare Worker (secure API proxy)
 - **Linting**: ESLint
 - **License**: MIT
 
@@ -31,8 +33,12 @@ npm run lint     # Run ESLint on src/
 - `src/Tubes.js` - Pipe obstacles manager
 - `src/GameState.js` - Game state constants
 - `src/scenes/` - All game scenes extend `BaseScene`
+  - `LeaderboardScene.js` - Global leaderboard display
 - `src/ui/` - UI components (Button, ScorePanel)
 - `src/utils/` - Utilities (audio, background, ground, storage, etc.)
+  - `leaderboard.js` - Leaderboard API client
+- `workers/` - Cloudflare Worker for secure API proxy
+- `wrangler.toml` - Cloudflare Worker configuration
 
 ### Imports
 - Always use full file paths with `.js` extension
@@ -126,6 +132,15 @@ Scenes are registered in `Game.js` and accessed via game state transitions.
 - Apply effects via `ctx.save()`/`ctx.restore()` pattern
 - Fade effects using `ctx.globalAlpha`
 
+### Leaderboard System
+- Frontend calls Cloudflare Worker API instead of Turso directly
+- Worker holds Turso credentials securely (environment variables)
+- API endpoints:
+  - `POST /api/submit` - Submit a score (requires `{ name, score }`)
+  - `GET /api/scores?limit=10` - Get top scores
+- Environment variable: `VITE_LEADERBOARD_API_URL` points to worker URL
+- Worker uses ES module export format: `export default { async fetch(request, env) { ... } }`
+
 ## Game Configuration
 
 Configuration is distributed across individual modules for maintainability:
@@ -179,6 +194,12 @@ Configuration is distributed across individual modules for maintainability:
 - Entities have `reset()` methods for state restoration
 - High scores persisted via localStorage
 
+### Environment Variables
+- `.env.example` shows required environment variables
+- `.env` is gitignored - never commit secrets
+- `VITE_LEADERBOARD_API_URL` - URL to Cloudflare Worker for leaderboard
+- Turso credentials are stored in Cloudflare Worker secrets, not in frontend
+
 ## Common Gotchas
 
 1. **Canvas scaling**: Coordinates must be transformed from screen to canvas space using `getBoundingClientRect()`
@@ -191,6 +212,7 @@ Configuration is distributed across individual modules for maintainability:
 8. **Screen shake**: Apply offset to entire canvas, restore after drawing all elements
 9. **Animation timing**: Use ease functions for smooth UI transitions
 10. **Event listener cleanup**: Not required for window event listeners since page reloads on code changes during development
+11. **Leaderboard API**: Always call Cloudflare Worker, never Turso directly (security)
 
 ## Testing
 

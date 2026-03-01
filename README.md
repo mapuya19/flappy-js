@@ -35,6 +35,7 @@ This implementation replicates **Flappy Bird v1.2/1.3** (iOS) behavior.
 - Visual polish: parallax backgrounds, sprite animations
 - Auto-deployment to GitHub Pages via GitHub Actions
 - Efficient sprite atlas rendering system
+- Global leaderboard with Turso database (requires Cloudflare Worker setup)
 
 ## Quick Start
 
@@ -107,6 +108,19 @@ To deploy locally:
 npm run build
 # Upload contents of dist/ to your hosting provider
 ```
+
+## Leaderboard Setup
+
+To enable the global leaderboard, you need to set up a Cloudflare Worker to securely proxy requests to Turso:
+
+1. Set up a Turso database with a `scores` table
+2. Deploy the Cloudflare Worker following the [deployment guide](workers/README.md)
+3. Update `.env` with the worker URL:
+   ```env
+   VITE_LEADERBOARD_API_URL=https://your-worker-url.workers.dev
+   ```
+
+For detailed instructions, see [workers/README.md](workers/README.md)
 
 ## Original Build
 

@@ -2,6 +2,7 @@ import { BaseScene } from './BaseScene.js';
 import { Button } from '../ui/Button.js';
 import { ScorePanel } from '../ui/ScorePanel.js';
 import { GameState } from '../GameState.js';
+import { submitScore } from '../utils/leaderboard.js';
 
 const GameOverSceneConfig = {
   BUTTONS: {
@@ -33,7 +34,7 @@ export class GameOverScene extends BaseScene {
   constructor(game) {
     super(game);
     this.playButton = null;
-    this.scoreButton = null;
+    this.leaderboardButton = null;
     this.scorePanel = null;
     this.animationTimer = 0;
     this.gameOverY = 0;
@@ -44,6 +45,8 @@ export class GameOverScene extends BaseScene {
     this.scoreAnimationStarted = false;
     this.gameOverSoundPlayed = false;
     this.panelSoundPlayed = false;
+    this.scoreSubmitted = false;
+    this.nameInputShown = false;
   }
 
   onEnter(currentScore, bestScore) {
@@ -59,6 +62,8 @@ export class GameOverScene extends BaseScene {
     this.scoreAnimationStarted = false;
     this.gameOverSoundPlayed = false;
     this.panelSoundPlayed = false;
+    this.scoreSubmitted = false;
+    this.nameInputShown = false;
 
     this.scorePanel = new ScorePanel(this.renderer, midX, this.game.height * GameOverSceneConfig.POSITIONS.panelYRatio);
 
@@ -70,12 +75,12 @@ export class GameOverScene extends BaseScene {
       () => this.restart()
     );
 
-    this.scoreButton = new Button(
+    this.leaderboardButton = new Button(
       this.renderer,
       'button_score',
       midX + GameOverSceneConfig.BUTTONS.spacing,
       buttonY,
-      () => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')
+      () => this.goToLeaderboard()
     );
 
     this.scorePanel.show(currentScore, bestScore);
@@ -85,11 +90,35 @@ export class GameOverScene extends BaseScene {
     if (this.scorePanel) {
       this.scorePanel.hide();
     }
+    this.scoreSubmitted = false;
   }
 
   restart() {
     this.game.sounds.swoosh?.play();
     this.game.transitionTo(GameState.READY);
+  }
+
+  showNameInput() {
+    if (this.scoreSubmitted) return;
+
+    const name = prompt('Enter your name (max 20 chars):');
+
+    if (name && name.trim().length > 0) {
+      const trimmedName = name.trim().slice(0, 20);
+      submitScore(trimmedName, this.scorePanel.currentScore).then(() => {
+        this.scoreSubmitted = true;
+      }).catch(err => {
+        console.error('Failed to submit score:', err);
+        alert('Failed to submit score. Please try again later.');
+      });
+    } else {
+      this.scoreSubmitted = true;
+    }
+  }
+
+  goToLeaderboard() {
+    this.game.sounds.swoosh?.play();
+    this.game.transitionTo(GameState.SCOREBOARD);
   }
 
   update(deltaTime) {
@@ -167,6 +196,11 @@ export class GameOverScene extends BaseScene {
     } else {
       this.buttonsY = buttonsTarget;
     }
+
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showButtonsDelay && !this.nameInputShown && !this.scoreSubmitted && this.scorePanel.currentScore > 0) {
+      this.showNameInput();
+      this.nameInputShown = true;
+    }
   }
 
   draw(ctx) {
@@ -208,9 +242,9 @@ export class GameOverScene extends BaseScene {
         this.playButton.y = this.buttonsY;
         this.playButton.draw();
       }
-      if (this.scoreButton) {
-        this.scoreButton.y = this.buttonsY;
-        this.scoreButton.draw();
+      if (this.leaderboardButton) {
+        this.leaderboardButton.y = this.buttonsY;
+        this.leaderboardButton.draw();
       }
     }
   }
@@ -229,7 +263,7 @@ export class GameOverScene extends BaseScene {
 
     if (this.animationTimer >= enableInputAtTime) {
       if (this.playButton && this.playButton.handleInput(x, y)) return true;
-      if (this.scoreButton && this.scoreButton.handleInput(x, y)) return true;
+      if (this.leaderboardButton && this.leaderboardButton.handleInput(x, y)) return true;
     }
     return false;
   }
@@ -248,7 +282,7 @@ export class GameOverScene extends BaseScene {
 
     if (this.animationTimer >= enableInputAtTime) {
       if (this.playButton && this.playButton.handleRelease(x, y)) return true;
-      if (this.scoreButton && this.scoreButton.handleRelease(x, y)) return true;
+      if (this.leaderboardButton && this.leaderboardButton.handleRelease(x, y)) return true;
     }
     return false;
   }
