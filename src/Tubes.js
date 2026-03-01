@@ -1,138 +1,124 @@
 export default class Tubes {
-  constructor(canvasWidth, canvasHeight, config = {}) {
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
-    this.tubeWidth = config.width || 78;
-    this.gap = config.gap || 130;
-    this.minimum = config.minimum || 130;
-    this.speed = config.speed || 3.0;
-    this.tubeSpacing = config.spacing || 250;
-    
-    this.topTube = 0;
-    this.bottomTube = 0;
-    this.topTube2 = 0;
-    this.bottomTube2 = 0;
-    
-    this.posX = canvasWidth;
-    this.posX2 = canvasWidth + this.tubeSpacing;
-    
-    this.tube1Passed = false;
-    this.tube2Passed = false;
-    
-    this.resetTube1();
-    this.resetTube2();
+  constructor(config = {}) {
+    this.width = config.width || 52;
+    this.height = config.height || 320;
+    this.gap = config.gap || 100;
+    this.speed = config.speed || 90;
+    this.spacing = config.spacing || 420;
+    this.spawnInterval = config.spawnInterval || 2.0;
+
+    this.pipes = [];
+    this.pipeStates = [];
+    this.spawnTimer = 0;
+
+    this.canvasHeight = config.canvasHeight || 512;
+    this.canvasWidth = config.canvasWidth || 288;
   }
-  
-  resetTube1() {
-    this.topTube = Math.random() * (this.canvasHeight - this.minimum - this.minimum) + this.minimum;
-    this.bottomTube = this.topTube + this.gap;
-    this.tube1Passed = false;
+
+  reset() {
+    this.pipes = [];
+    this.pipeStates = [];
+    this.spawnTimer = 0;
+    this.spawnPipe();
+    this.spawnTimer = 0;
   }
-  
-  resetTube2() {
-    this.topTube2 = Math.random() * (this.canvasHeight - this.minimum - this.minimum) + this.minimum;
-    this.bottomTube2 = this.topTube2 + this.gap;
-    this.tube2Passed = false;
-  }
-  
-  update(birdAlive) {
-    if (birdAlive) {
-      this.posX -= this.speed;
-      this.posX2 -= this.speed;
-      
-      if (this.posX + this.tubeWidth < 0) {
-        this.resetTube1();
-        this.posX = this.canvasWidth;
+
+  update(deltaTime, birdX) {
+    this.spawnTimer += deltaTime;
+
+    if (this.spawnTimer >= this.spawnInterval) {
+      this.spawnPipe();
+      this.spawnTimer = 0;
+    }
+
+    let scored = false;
+
+    for (let i = this.pipes.length - 1; i >= 0; i--) {
+      const pipe = this.pipes[i];
+      pipe.x -= this.speed * deltaTime;
+
+      if (this.pipeStates[i] === 0 && pipe.x < birdX) {
+        this.pipeStates[i] = 1;
+        scored = true;
       }
-      
-      if (this.posX2 + this.tubeWidth < 0) {
-        this.resetTube2();
-        this.posX2 = this.canvasWidth;
+
+      if (pipe.x <= -100) {
+        this.pipes.splice(i, 1);
+        this.pipeStates.splice(i, 1);
+      }
+    }
+
+    return scored;
+  }
+
+  spawnPipe() {
+    const groundY = this.canvasHeight - 112;
+    const usableHeight = groundY - 56 - this.gap;
+    const minY = 50;
+    const maxY = usableHeight - 30;
+    const randomY = Math.random() * (maxY - minY) + minY;
+
+    this.pipes.push({
+      x: this.canvasWidth + this.width,
+      yOffset: randomY - this.height / 2,
+      passed: false
+    });
+
+    this.pipeStates.push(0);
+  }
+
+  draw(ctx) {
+    const groundY = this.canvasHeight - 112;
+
+    for (const pipe of this.pipes) {
+      const pipeTopY = pipe.yOffset + this.height / 2;
+      const pipeBottomY = pipe.yOffset + this.height / 2 + this.gap;
+
+      const topPipeHeight = Math.min(pipeTopY + 28, groundY - 28);
+      ctx.drawImage(
+        this.atlasImage,
+        112, 646 + (this.height - topPipeHeight), this.width, topPipeHeight,
+        pipe.x - this.width / 2, 0, this.width, topPipeHeight
+      );
+
+      const bottomPipeHeight = groundY - pipeBottomY;
+      if (bottomPipeHeight > 0) {
+        ctx.drawImage(
+          this.atlasImage,
+          168, 646, this.width, bottomPipeHeight,
+          pipe.x - this.width / 2, pipeBottomY, this.width, bottomPipeHeight
+        );
       }
     }
   }
-  
-  drawPipe(ctx, x, topHeight, bottomY) {
-    const pipeWidth = this.tubeWidth;
-    const capHeight = 28;
-    const capOverhang = 6;
-    
-    ctx.strokeStyle = '#2E7D32';
-    ctx.lineWidth = 2;
-    
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(x, 0, pipeWidth, topHeight - capHeight);
-    ctx.strokeRect(x, 0, pipeWidth, topHeight - capHeight);
-    
-    ctx.fillStyle = '#66BB6A';
-    ctx.fillRect(x, 0, pipeWidth * 0.3, topHeight - capHeight);
-    
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(x - capOverhang, topHeight - capHeight, pipeWidth + capOverhang * 2, capHeight);
-    ctx.strokeRect(x - capOverhang, topHeight - capHeight, pipeWidth + capOverhang * 2, capHeight);
-    
-    ctx.fillStyle = '#66BB6A';
-    ctx.fillRect(x - capOverhang, topHeight - capHeight, (pipeWidth + capOverhang * 2) * 0.3, capHeight);
-    
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(x, bottomY, pipeWidth, this.canvasHeight - bottomY);
-    ctx.strokeRect(x, bottomY, pipeWidth, this.canvasHeight - bottomY);
-    
-    ctx.fillStyle = '#66BB6A';
-    ctx.fillRect(x, bottomY, pipeWidth * 0.3, this.canvasHeight - bottomY);
-    
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(x - capOverhang, bottomY, pipeWidth + capOverhang * 2, capHeight);
-    ctx.strokeRect(x - capOverhang, bottomY, pipeWidth + capOverhang * 2, capHeight);
-    
-    ctx.fillStyle = '#66BB6A';
-    ctx.fillRect(x - capOverhang, bottomY, (pipeWidth + capOverhang * 2) * 0.3, capHeight);
+
+  setAtlas(atlasImage) {
+    this.atlasImage = atlasImage;
   }
-  
-  draw(ctx) {
-    this.drawPipe(ctx, this.posX, this.topTube, this.bottomTube);
-    this.drawPipe(ctx, this.posX2, this.topTube2, this.bottomTube2);
+
+  setCanvasHeight(h) {
+    this.canvasHeight = h;
   }
-  
+
   checkCollision(bird) {
-    const birdLeft = bird.x - bird.radius;
-    const birdRight = bird.x + bird.radius;
-    const birdTop = bird.y - bird.radius * 0.8;
-    const birdBottom = bird.y + bird.radius * 0.8;
+    const hitboxRadius = 10;
     
-    const tubesToCheck = [
-      { x: this.posX, top: this.topTube, bottom: this.bottomTube },
-      { x: this.posX2, top: this.topTube2, bottom: this.bottomTube2 }
-    ];
-    
-    for (const tube of tubesToCheck) {
-      const tubeLeft = tube.x;
-      const tubeRight = tube.x + this.tubeWidth;
-      
-      if (birdRight > tubeLeft && birdLeft < tubeRight) {
-        if (birdTop < tube.top || birdBottom > tube.bottom) {
+    for (let i = 0; i < this.pipes.length; i++) {
+      const pipe = this.pipes[i];
+      const pipeLeft = pipe.x - this.width / 2;
+      const pipeRight = pipe.x + this.width / 2;
+      const pipeTopY = pipe.yOffset + this.height / 2;
+      const pipeBottomY = pipe.yOffset + this.height / 2 + this.gap;
+
+      const birdLeft = bird.x - hitboxRadius;
+      const birdRight = bird.x + hitboxRadius;
+
+      if (birdRight > pipeLeft && birdLeft < pipeRight) {
+        if (bird.y - hitboxRadius < pipeTopY + 28 || bird.y + hitboxRadius > pipeBottomY) {
           return true;
         }
       }
     }
-    
-    return false;
-  }
-  
-  checkScore(bird) {
-    const halfwayPoint1 = this.posX + this.tubeWidth / 2;
-    const halfwayPoint2 = this.posX2 + this.tubeWidth / 2;
-    
-    if (!this.tube1Passed && bird.x > halfwayPoint1) {
-      this.tube1Passed = true;
-      return true;
-    }
-    
-    if (!this.tube2Passed && bird.x > halfwayPoint2) {
-      this.tube2Passed = true;
-      return true;
-    }
-    
     return false;
   }
 }

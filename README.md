@@ -1,20 +1,22 @@
 # Flappy JS - Modern Edition
 
-A modernized Flappy Bird game built with vanilla JavaScript and Canvas API. Originally created in 2020 with Processing and p5.js, rebuilt in 2026.
+A modernized Flappy Bird game built with vanilla JavaScript and Canvas API. Originally created in 2020 with Processing and p5.js, completely rebuilt in 2026.
 
 <p align="center">
-  <img src="flappy-js.png" width="300" title="Original 2020 version (Processing/p5.js)">
-  <img src="flappy-new.png" width="300" title="Modern 2026 rebuild (Vanilla JS/Canvas)">
+  <img src="flappy-js.png" height="250" title="Original 2020 version (Processing/p5.js)">
+  <img src="flappy-new.png" height="250" title="Modern 2026 rebuild (Vanilla JS/Canvas)">
 </p>
 <p align="center"><small>Left: Original 2020 version • Right: Modern 2026 rebuild</small></p>
 
 ## Features
 
 - Modern tech stack: ES6+ JavaScript, Vite, Canvas API
+- Scene-based architecture with clean state management
 - Responsive design for desktop and mobile
 - Touch controls, keyboard support, high scores with localStorage
-- Visual polish: particle effects, screen shake, parallax backgrounds
+- Visual polish: parallax backgrounds, sprite animations
 - Auto-deployment to GitHub Pages via GitHub Actions
+- Efficient sprite atlas rendering system
 
 ## Quick Start
 
@@ -23,20 +25,21 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173` to play.
+Visit `http://localhost:3000` to play.
 
 ## Gameplay
 
-- **Desktop**: Space bar or click to jump
-- **Mobile**: Tap to jump
+- **Desktop**: Space bar, Enter key, or click to jump
+- **Mobile**: Tap anywhere to jump
 - Navigate through pipe gaps without hitting them or the ground
+- Earn medals based on your score (bronze, silver, gold, platinum)
 
 ## Development
 
 ```bash
-npm run dev      # Development server
-npm run build    # Production build
-npm run preview  # Preview build locally
+npm run dev      # Development server on port 3000
+npm run build    # Production build to dist/
+npm run preview  # Preview production build locally
 npm run lint     # Run ESLint
 ```
 
@@ -45,20 +48,51 @@ npm run lint     # Run ESLint
 ```
 src/
 ├── main.js           # Entry point
-├── Game.js           # Game controller
+├── Game.js           # Main game controller
 ├── Bird.js           # Bird entity
-├── Tubes.js          # Pipe obstacles
-├── Score.js          # Score display
+├── Tubes.js          # Pipe obstacles manager
+├── GameState.js      # Game state constants
+├── scenes/           # Scene-based game states
+│   ├── BaseScene.js      # Base scene class
+│   ├── StartScene.js     # Title screen
+│   ├── ReadyScene.js     # Ready state
+│   ├── GameScene.js      # Active gameplay
+│   ├── FallingScene.js   # Bird falling animation
+│   └── GameOverScene.js  # Game over with score
+├── ui/               # UI components
+│   ├── Button.js         # Interactive buttons
+│   └── ScorePanel.js     # Score display panel
 └── utils/
-    ├── Background.js       # Parallax background
-    ├── ParticleSystem.js   # Visual effects
-    ├── ScreenShake.js      # Screen shake
-    ├── audio.js            # Sound management
-    └── storage.js          # High score persistence
+    ├── AtlasLoader.js    # Sprite atlas loader
+    ├── SpriteRenderer.js # Sprite rendering
+    ├── audio.js          # Sound management
+    ├── Background.js     # Parallax background
+    ├── Ground.js         # Scrolling ground
+    └── storage.js        # High score persistence
 
 public/
-└── assets/               # Static assets (sounds, fonts)
+└── assets/
+    ├── sprites/          # Sprite atlas (atlas.png, atlas.json)
+    └── *.m4a             # Sound files
 ```
+
+## Architecture
+
+### Scene System
+The game uses a scene-based architecture where each game state (Start, Ready, Playing, Falling, Game Over) is handled by a dedicated scene class. All scenes extend `BaseScene` and implement:
+
+- `onEnter()` - Scene initialization
+- `onExit()` - Scene cleanup
+- `update(deltaTime)` - Game logic updates
+- `draw(ctx)` - Rendering
+- `handleInput(x, y)` - Input handling
+- `handleRelease(x, y)` - Input release handling
+
+### Sprite Atlas
+All game assets are loaded from a sprite atlas (`atlas.png` with `atlas.json` metadata) for efficient rendering. Sprites are referenced by name and rendered via `SpriteRenderer`.
+
+### Game Loop
+Delta time-based updates ensure consistent gameplay across different frame rates. The loop is capped at 30 FPS minimum for consistency.
 
 ## Deployment
 
@@ -66,7 +100,7 @@ The game is automatically deployed to GitHub Pages via GitHub Actions:
 
 - **Live Demo**: [https://matthewapuya.com/flappy-js/](https://matthewapuya.com/flappy-js/)
 - **Workflow**: Builds on push to master branch
-- **Source**: GitHub Actions (configured in `.github/workflows/deploy.yml`)
+- **Source**: GitHub Actions
 
 To deploy locally:
 ```bash
