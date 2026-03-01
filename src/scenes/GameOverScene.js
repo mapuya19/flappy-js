@@ -2,7 +2,7 @@ import { BaseScene } from './BaseScene.js';
 import { Button } from '../ui/Button.js';
 import { ScorePanel } from '../ui/ScorePanel.js';
 import { GameState } from '../GameState.js';
-import { submitScore } from '../utils/leaderboard.js';
+import { submitScore, getTopScores } from '../utils/leaderboard.js';
 
 const GameOverSceneConfig = {
   BUTTONS: {
@@ -47,6 +47,10 @@ export class GameOverScene extends BaseScene {
     this.panelSoundPlayed = false;
     this.scoreSubmitted = false;
     this.nameInputShown = false;
+    this.currentScore = 0;
+    this.bestScore = 0;
+    this.leaderboardLoaded = false;
+    this.minTopScore = null;
   }
 
   onEnter(currentScore, bestScore) {
@@ -64,6 +68,10 @@ export class GameOverScene extends BaseScene {
     this.panelSoundPlayed = false;
     this.scoreSubmitted = false;
     this.nameInputShown = false;
+    this.currentScore = currentScore;
+    this.bestScore = bestScore;
+    this.leaderboardLoaded = false;
+    this.minTopScore = null;
 
     this.scorePanel = new ScorePanel(this.renderer, midX, this.game.height * GameOverSceneConfig.POSITIONS.panelYRatio);
 
@@ -84,6 +92,15 @@ export class GameOverScene extends BaseScene {
     );
 
     this.scorePanel.show(currentScore, bestScore);
+
+    getTopScores(10).then(scores => {
+      this.leaderboardLoaded = true;
+      if (scores.length >= 10 && scores[scores.length - 1] && typeof scores[scores.length - 1].score === 'number') {
+        this.minTopScore = scores[scores.length - 1].score;
+      }
+    }).catch(err => {
+      console.warn('Failed to fetch leaderboard:', err);
+    });
   }
 
   onExit() {
@@ -91,6 +108,8 @@ export class GameOverScene extends BaseScene {
       this.scorePanel.hide();
     }
     this.scoreSubmitted = false;
+    this.leaderboardLoaded = false;
+    this.minTopScore = null;
   }
 
   restart() {
@@ -197,9 +216,12 @@ export class GameOverScene extends BaseScene {
       this.buttonsY = buttonsTarget;
     }
 
-    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showButtonsDelay && !this.nameInputShown && !this.scoreSubmitted && this.scorePanel.currentScore > 0) {
-      this.showNameInput();
-      this.nameInputShown = true;
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showButtonsDelay && !this.nameInputShown && !this.scoreSubmitted && this.leaderboardLoaded) {
+      const shouldPrompt = this.minTopScore === null ? this.currentScore > 0 : this.currentScore > this.minTopScore;
+      if (shouldPrompt) {
+        this.showNameInput();
+        this.nameInputShown = true;
+      }
     }
   }
 
