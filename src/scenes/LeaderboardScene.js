@@ -8,7 +8,7 @@ const LeaderboardSceneConfig = {
     fadeInDuration: 0.3
   },
   POSITIONS: {
-    startYRatio: 0.20,
+    startYRatio: 0.15,
     rowHeight: 28,
     contentWidth: 170,
     buttonYRatio: 0.73
