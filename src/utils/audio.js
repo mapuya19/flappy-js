@@ -59,25 +59,28 @@ async function decodeAudioBuffer(arrayBuffer) {
 export async function loadSounds() {
   const base = import.meta.env.BASE_URL;
   try {
-    const [pointBuffer, wingBuffer, hitBuffer, dieBuffer] = await Promise.all([
+    const [pointBuffer, wingBuffer, hitBuffer, dieBuffer, swooshBuffer] = await Promise.all([
       loadAudioBuffer(`${base}assets/point.m4a`),
       loadAudioBuffer(`${base}assets/wing.m4a`),
       loadAudioBuffer(`${base}assets/hit.m4a`),
-      loadAudioBuffer(`${base}assets/die.m4a`)
+      loadAudioBuffer(`${base}assets/die.m4a`),
+      loadAudioBuffer(`${base}assets/swoosh.m4a`)
     ]);
 
-    const [point, wing, hit, die] = await Promise.all([
+    const [point, wing, hit, die, swoosh] = await Promise.all([
       decodeAudioBuffer(pointBuffer),
       decodeAudioBuffer(wingBuffer),
       decodeAudioBuffer(hitBuffer),
-      decodeAudioBuffer(dieBuffer)
+      decodeAudioBuffer(dieBuffer),
+      decodeAudioBuffer(swooshBuffer)
     ]);
 
     return {
       point: point ? new Sound(point) : null,
       wing: wing ? new Sound(wing) : null,
       hit: hit ? new Sound(hit) : null,
-      die: die ? new Sound(die) : null
+      die: die ? new Sound(die) : null,
+      swoosh: swoosh ? new Sound(swoosh) : null
     };
   } catch (error) {
     console.warn('Failed to load sounds:', error);

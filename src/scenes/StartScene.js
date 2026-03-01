@@ -41,6 +41,7 @@ export class StartScene extends BaseScene {
   }
 
   transitionToReady() {
+    this.game.sounds.swoosh?.play();
     this.game.triggerFadeToReady();
   }
 

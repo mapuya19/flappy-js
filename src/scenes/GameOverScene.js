@@ -16,6 +16,8 @@ export class GameOverScene extends BaseScene {
     this.buttonsY = 0;
     this.buttonTargetY = 0;
     this.scoreAnimationStarted = false;
+    this.gameOverSoundPlayed = false;
+    this.panelSoundPlayed = false;
   }
 
   onEnter(currentScore, bestScore) {
@@ -58,6 +60,7 @@ export class GameOverScene extends BaseScene {
   }
 
   restart() {
+    this.game.sounds.swoosh?.play();
     this.game.transitionTo(GameState.READY);
   }
 
@@ -75,12 +78,20 @@ export class GameOverScene extends BaseScene {
       this.gameOverY = gameOverTarget;
       this.gameOverAlpha = 0;
     } else if (this.animationTimer < 0.8) {
+      if (!this.gameOverSoundPlayed) {
+        this.game.sounds.swoosh?.play();
+        this.gameOverSoundPlayed = true;
+      }
       const t = (this.animationTimer - 0.5) / 0.3;
       this.gameOverAlpha = t;
       const bounceT = (this.animationTimer - 0.5) / 0.3;
       const bounceEase = bounceT * (2 - bounceT);
       this.gameOverY = gameOverTarget * (1 - bounceEase) + (gameOverTarget - 15) * bounceEase;
     } else if (this.animationTimer < 1.2) {
+      if (!this.gameOverSoundPlayed) {
+        this.game.sounds.swoosh?.play();
+        this.gameOverSoundPlayed = true;
+      }
       const t = (this.animationTimer - 0.8) / 0.4;
       const ease = t * (2 - t);
       this.gameOverY = (gameOverTarget - 15) * (1 - ease) + gameOverTarget * ease;
@@ -93,6 +104,10 @@ export class GameOverScene extends BaseScene {
     if (this.animationTimer < 1.0) {
       this.panelY = this.game.height + 150;
     } else if (this.animationTimer < 1.5) {
+      if (!this.panelSoundPlayed) {
+        this.game.sounds.swoosh?.play();
+        this.panelSoundPlayed = true;
+      }
       const t = (this.animationTimer - 1.0) / 0.5;
       const ease = t * t * (3 - 2 * t);
       this.panelY = (this.game.height + 150) * (1 - ease) + panelTarget * ease;
@@ -103,6 +118,7 @@ export class GameOverScene extends BaseScene {
     if (this.animationTimer >= 1.6 && !this.scoreAnimationStarted && this.scorePanel.currentScore > 0) {
       this.scorePanel.startScoreAnimation();
       this.scoreAnimationStarted = true;
+      this.game.updateHighScoreIfNeeded(this.scorePanel.currentScore);
     }
 
     const scoreAnimationComplete = this.scorePanel.isScoreAnimationComplete();

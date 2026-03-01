@@ -142,13 +142,14 @@ export default class Game {
     }
 
     this.lastScore = this.currentScore;
+    this.transitionTo(GameState.GAME_OVER);
+  }
 
-    if (this.currentScore > this.highScore) {
-      this.highScore = this.currentScore;
+  updateHighScoreIfNeeded(score) {
+    if (score > this.highScore) {
+      this.highScore = score;
       setHighScore(this.highScore);
     }
-
-    this.transitionTo(GameState.GAME_OVER);
   }
 
   setupInput() {

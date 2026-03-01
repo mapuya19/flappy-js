@@ -9,6 +9,7 @@ export class ScorePanel {
     this.bestScore = 0;
     this.medal = null;
     this.showNew = false;
+    this.isNewRecord = false;
     this.animationTime = 0;
     this.currentY = y;
     this.scoreAnimationTime = 0;
@@ -24,7 +25,8 @@ export class ScorePanel {
     this.bestScore = bestScore;
     // this.medal = 'medals_1' // test medals
     this.medal = this.getMedal(currentScore);
-    this.showNew = currentScore > bestScore;
+    this.isNewRecord = currentScore > bestScore;
+    this.showNew = false;
     this.animationTime = 0;
     this.currentY = -100;
     this.scoreAnimating = false;
@@ -80,6 +82,9 @@ export class ScorePanel {
       } else {
         this.displayScore = this.currentScore;
         this.scoreAnimating = false;
+        if (this.isNewRecord) {
+          this.showNew = true;
+        }
       }
     }
   }
@@ -94,7 +99,7 @@ export class ScorePanel {
     }
 
     if (this.showNew) {
-      this.renderer.drawSprite('new', this.x - 70, this.currentY - 55);
+      this.renderer.drawSprite('new', this.x + 110, this.currentY + 25);
     }
 
     this.drawScore(this.displayScore, this.x + 80, this.currentY - 17);
