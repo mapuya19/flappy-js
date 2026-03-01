@@ -101,10 +101,10 @@ export class GameOverScene extends BaseScene {
   showNameInput() {
     if (this.scoreSubmitted) return;
 
-    const name = prompt('Enter your name (max 20 chars):');
+    const name = prompt('Enter your name (max 10 chars):');
 
     if (name && name.trim().length > 0) {
-      const trimmedName = name.trim().slice(0, 20);
+      const trimmedName = name.trim().slice(0, 10);
       submitScore(trimmedName, this.scorePanel.currentScore).then(() => {
         this.scoreSubmitted = true;
       }).catch(err => {
