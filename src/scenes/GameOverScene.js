@@ -3,6 +3,32 @@ import { Button } from '../ui/Button.js';
 import { ScorePanel } from '../ui/ScorePanel.js';
 import { GameState } from '../GameState.js';
 
+const GameOverSceneConfig = {
+  BUTTONS: {
+    yRatio: 0.735,
+    spacing: 60
+  },
+  ANIMATION: {
+    gameOverFadeInStart: 0.5,
+    gameOverBounceEnd: 0.8,
+    gameOverSettleEnd: 1.2,
+    panelSlideInStart: 1.0,
+    panelSlideInEnd: 1.5,
+    buttonsShowBaseTime: 1.6,
+    buttonsShowScoreTime: 2.2,
+    showTextDelay: 0.2,
+    showPanelDelay: 1.0,
+    showButtonsDelay: 2.2
+  },
+  POSITIONS: {
+    gameOverYRatio: 0.30,
+    panelYRatio: 0.5,
+    gameOverBounceOffset: -15,
+    panelStartOffset: 150,
+    buttonsStartOffset: 80
+  }
+};
+
 export class GameOverScene extends BaseScene {
   constructor(game) {
     super(game);
@@ -22,22 +48,24 @@ export class GameOverScene extends BaseScene {
 
   onEnter(currentScore, bestScore) {
     const midX = this.game.width / 2;
-    const buttonY = this.game.height * 0.735;
+    const buttonY = this.game.height * GameOverSceneConfig.BUTTONS.yRatio;
 
     this.animationTimer = 0;
-    this.gameOverY = -30;
+    this.gameOverY = GameOverSceneConfig.POSITIONS.gameOverBounceOffset;
     this.gameOverAlpha = 0;
-    this.panelY = this.game.height + 150;
-    this.buttonsY = this.game.height + 80;
+    this.panelY = this.game.height + GameOverSceneConfig.POSITIONS.panelStartOffset;
+    this.buttonsY = this.game.height + GameOverSceneConfig.POSITIONS.buttonsStartOffset;
     this.buttonTargetY = buttonY;
     this.scoreAnimationStarted = false;
+    this.gameOverSoundPlayed = false;
+    this.panelSoundPlayed = false;
 
-    this.scorePanel = new ScorePanel(this.renderer, midX, this.game.height / 2);
+    this.scorePanel = new ScorePanel(this.renderer, midX, this.game.height * GameOverSceneConfig.POSITIONS.panelYRatio);
 
     this.playButton = new Button(
       this.renderer,
       'button_play',
-      midX - 60,
+      midX - GameOverSceneConfig.BUTTONS.spacing,
       buttonY,
       () => this.restart()
     );
@@ -45,7 +73,7 @@ export class GameOverScene extends BaseScene {
     this.scoreButton = new Button(
       this.renderer,
       'button_score',
-      midX + 60,
+      midX + GameOverSceneConfig.BUTTONS.spacing,
       buttonY,
       () => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')
     );
@@ -70,52 +98,54 @@ export class GameOverScene extends BaseScene {
       this.scorePanel.update(deltaTime);
     }
 
-    const gameOverTarget = this.game.height * 0.30;
-    const panelTarget = this.game.height / 2;
+    const gameOverTarget = this.game.height * GameOverSceneConfig.POSITIONS.gameOverYRatio;
+    const panelTarget = this.game.height * GameOverSceneConfig.POSITIONS.panelYRatio;
     const buttonsTarget = this.buttonTargetY;
 
-    if (this.animationTimer < 0.5) {
+    if (this.animationTimer < GameOverSceneConfig.ANIMATION.gameOverFadeInStart) {
       this.gameOverY = gameOverTarget;
       this.gameOverAlpha = 0;
-    } else if (this.animationTimer < 0.8) {
+    } else if (this.animationTimer < GameOverSceneConfig.ANIMATION.gameOverBounceEnd) {
       if (!this.gameOverSoundPlayed) {
         this.game.sounds.swoosh?.play();
         this.gameOverSoundPlayed = true;
       }
-      const t = (this.animationTimer - 0.5) / 0.3;
+      const t = (this.animationTimer - GameOverSceneConfig.ANIMATION.gameOverFadeInStart) / 
+                (GameOverSceneConfig.ANIMATION.gameOverBounceEnd - GameOverSceneConfig.ANIMATION.gameOverFadeInStart);
       this.gameOverAlpha = t;
-      const bounceT = (this.animationTimer - 0.5) / 0.3;
-      const bounceEase = bounceT * (2 - bounceT);
-      this.gameOverY = gameOverTarget * (1 - bounceEase) + (gameOverTarget - 15) * bounceEase;
-    } else if (this.animationTimer < 1.2) {
+      const bounceEase = t * (2 - t);
+      this.gameOverY = gameOverTarget * (1 - bounceEase) + (gameOverTarget + GameOverSceneConfig.POSITIONS.gameOverBounceOffset) * bounceEase;
+    } else if (this.animationTimer < GameOverSceneConfig.ANIMATION.gameOverSettleEnd) {
       if (!this.gameOverSoundPlayed) {
         this.game.sounds.swoosh?.play();
         this.gameOverSoundPlayed = true;
       }
-      const t = (this.animationTimer - 0.8) / 0.4;
+      const t = (this.animationTimer - GameOverSceneConfig.ANIMATION.gameOverBounceEnd) / 
+                (GameOverSceneConfig.ANIMATION.gameOverSettleEnd - GameOverSceneConfig.ANIMATION.gameOverBounceEnd);
       const ease = t * (2 - t);
-      this.gameOverY = (gameOverTarget - 15) * (1 - ease) + gameOverTarget * ease;
+      this.gameOverY = (gameOverTarget + GameOverSceneConfig.POSITIONS.gameOverBounceOffset) * (1 - ease) + gameOverTarget * ease;
       this.gameOverAlpha = 1;
     } else {
       this.gameOverY = gameOverTarget;
       this.gameOverAlpha = 1;
     }
 
-    if (this.animationTimer < 1.0) {
-      this.panelY = this.game.height + 150;
-    } else if (this.animationTimer < 1.5) {
+    if (this.animationTimer < GameOverSceneConfig.ANIMATION.panelSlideInStart) {
+      this.panelY = this.game.height + GameOverSceneConfig.POSITIONS.panelStartOffset;
+    } else if (this.animationTimer < GameOverSceneConfig.ANIMATION.panelSlideInEnd) {
       if (!this.panelSoundPlayed) {
         this.game.sounds.swoosh?.play();
         this.panelSoundPlayed = true;
       }
-      const t = (this.animationTimer - 1.0) / 0.5;
+      const t = (this.animationTimer - GameOverSceneConfig.ANIMATION.panelSlideInStart) / 
+                (GameOverSceneConfig.ANIMATION.panelSlideInEnd - GameOverSceneConfig.ANIMATION.panelSlideInStart);
       const ease = t * t * (3 - 2 * t);
-      this.panelY = (this.game.height + 150) * (1 - ease) + panelTarget * ease;
+      this.panelY = (this.game.height + GameOverSceneConfig.POSITIONS.panelStartOffset) * (1 - ease) + panelTarget * ease;
     } else {
       this.panelY = panelTarget;
     }
 
-    if (this.animationTimer >= 1.6 && !this.scoreAnimationStarted && this.scorePanel.currentScore > 0) {
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.buttonsShowBaseTime && !this.scoreAnimationStarted && this.scorePanel.currentScore > 0) {
       this.scorePanel.startScoreAnimation();
       this.scoreAnimationStarted = true;
       this.game.updateHighScoreIfNeeded(this.scorePanel.currentScore);
@@ -125,22 +155,24 @@ export class GameOverScene extends BaseScene {
     let showButtonsAtTime;
 
     if (this.scorePanel.currentScore === 0) {
-      showButtonsAtTime = 1.6;
+      showButtonsAtTime = GameOverSceneConfig.ANIMATION.buttonsShowBaseTime;
     } else if (scoreAnimationComplete) {
-      showButtonsAtTime = 2.2;
+      showButtonsAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     } else {
-      showButtonsAtTime = 2.2;
+      showButtonsAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     }
 
     if (this.animationTimer < showButtonsAtTime) {
-      this.buttonsY = this.game.height + 80;
+      this.buttonsY = this.game.height + GameOverSceneConfig.POSITIONS.buttonsStartOffset;
     } else {
       this.buttonsY = buttonsTarget;
     }
   }
 
   draw(ctx) {
-    this.renderer.drawSprite('bg_day', this.game.width / 2, this.game.height / 2);
+    if (this.game.background) {
+      this.game.background.draw(this.renderer);
+    }
 
     if (this.game.tubes) {
       this.game.tubes.draw(this.ctx);
@@ -160,18 +192,18 @@ export class GameOverScene extends BaseScene {
       this.game.ground.draw();
     }
 
-    if (this.animationTimer >= 0.2) {
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showTextDelay) {
       this.renderer.drawSprite('text_game_over', this.game.width / 2, this.gameOverY, { alpha: this.gameOverAlpha });
     }
 
-    if (this.animationTimer >= 1.0) {
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showPanelDelay) {
       if (this.scorePanel) {
         this.scorePanel.currentY = this.panelY;
         this.scorePanel.draw(ctx);
       }
     }
 
-    if (this.animationTimer >= 2.2) {
+    if (this.animationTimer >= GameOverSceneConfig.ANIMATION.showButtonsDelay) {
       if (this.playButton) {
         this.playButton.y = this.buttonsY;
         this.playButton.draw();
@@ -188,11 +220,11 @@ export class GameOverScene extends BaseScene {
     let enableInputAtTime;
 
     if (this.scorePanel.currentScore === 0) {
-      enableInputAtTime = 1.6;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowBaseTime;
     } else if (scoreAnimationComplete) {
-      enableInputAtTime = 2.2;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     } else {
-      enableInputAtTime = 2.2;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     }
 
     if (this.animationTimer >= enableInputAtTime) {
@@ -207,11 +239,11 @@ export class GameOverScene extends BaseScene {
     let enableInputAtTime;
 
     if (this.scorePanel.currentScore === 0) {
-      enableInputAtTime = 1.6;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowBaseTime;
     } else if (scoreAnimationComplete) {
-      enableInputAtTime = 2.2;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     } else {
-      enableInputAtTime = 2.2;
+      enableInputAtTime = GameOverSceneConfig.ANIMATION.buttonsShowScoreTime;
     }
 
     if (this.animationTimer >= enableInputAtTime) {

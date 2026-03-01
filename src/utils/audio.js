@@ -1,30 +1,41 @@
+let sharedAudioContext = null;
+
+function getSharedAudioContext() {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)({
+      sampleRate: 44100
+    });
+  }
+  return sharedAudioContext;
+}
+
 class Sound {
   constructor(buffer) {
     this.buffer = buffer;
-    this.audioContext = null;
   }
 
   play() {
     try {
-      if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 44100
-        });
+      const audioContext = getSharedAudioContext();
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
       }
 
-      if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
-      }
-
-      const source = this.audioContext.createBufferSource();
+      const source = audioContext.createBufferSource();
       source.buffer = this.buffer;
       
-      const gainNode = this.audioContext.createGain();
+      const gainNode = audioContext.createGain();
       gainNode.gain.value = 0.3;
       
       source.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
+      gainNode.connect(audioContext.destination);
       source.start(0);
+
+      source.onended = () => {
+        source.disconnect();
+        gainNode.disconnect();
+      };
     } catch {
       // Intentionally suppress audio play errors
     }

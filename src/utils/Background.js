@@ -9,6 +9,12 @@ export default class Background {
   update(_deltaTime, _speedMultiplier = 0) {
   }
 
-  draw(_ctx) {
+  draw(renderer) {
+    const bgSprite = this.dayMode ? 'bg_day' : 'bg_night';
+    renderer.drawSprite(bgSprite, this.width / 2, this.height / 2);
+  }
+
+  setDayMode(dayMode) {
+    this.dayMode = dayMode;
   }
 }

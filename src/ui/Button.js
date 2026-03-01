@@ -1,3 +1,7 @@
+const ButtonConfig = {
+  PRESS_OFFSET: 3
+};
+
 export class Button {
   constructor(renderer, spriteName, x, y, onClick) {
     this.renderer = renderer;
@@ -10,7 +14,7 @@ export class Button {
   }
 
   draw() {
-    const yOffset = this.isPressed ? 3 : 0;
+    const yOffset = this.isPressed ? ButtonConfig.PRESS_OFFSET : 0;
     this.renderer.drawSprite(this.spriteName, this.x, this.y + yOffset);
   }
 

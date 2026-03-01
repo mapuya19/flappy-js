@@ -1,6 +1,24 @@
 import { BaseScene } from './BaseScene.js';
 import { Button } from '../ui/Button.js';
 
+const StartSceneConfig = {
+  BIRD: {
+    yPosRatio: 0.45,
+    hoverFrequency: 7,
+    hoverAmplitude: 4
+  },
+  TITLE: {
+    yPosRatio: 0.33
+  },
+  BUTTONS: {
+    yPosRatio: 0.735,
+    rateYPosRatio: 0.575,
+    playXRatio: 0.55,
+    rateXRatio: 1,
+    scoreXRatio: 1.45
+  }
+};
+
 export class StartScene extends BaseScene {
   constructor(game) {
     super(game);
@@ -13,12 +31,12 @@ export class StartScene extends BaseScene {
 
   onEnter() {
     const midX = this.game.width / 2;
-    const buttonY = this.game.height * 0.735;
+    const buttonY = this.game.height * StartSceneConfig.BUTTONS.yPosRatio;
 
     this.playButton = new Button(
       this.renderer,
       'button_play',
-      midX / 2,
+      midX * StartSceneConfig.BUTTONS.playXRatio,
       buttonY,
       () => this.transitionToReady()
     );
@@ -26,15 +44,15 @@ export class StartScene extends BaseScene {
     this.rateButton = new Button(
       this.renderer,
       'button_rate',
-      midX,
-      this.game.height * 0.575,
+      midX * StartSceneConfig.BUTTONS.rateXRatio,
+      this.game.height * StartSceneConfig.BUTTONS.rateYPosRatio,
       () => window.open('https://github.com/mapuya19/flappy-js', '_blank')
     );
 
     this.scoreButton = new Button(
       this.renderer,
       'button_score',
-      midX * 1.5,
+      midX * StartSceneConfig.BUTTONS.scoreXRatio,
       buttonY,
       () => this.transitionToScoreboard()
     );
@@ -51,12 +69,14 @@ export class StartScene extends BaseScene {
 
   update(deltaTime) {
     this.birdTimer += deltaTime;
-    this.birdY = Math.sin(this.birdTimer * 7) * 4;
+    this.birdY = Math.sin(this.birdTimer * StartSceneConfig.BIRD.hoverFrequency) * StartSceneConfig.BIRD.hoverAmplitude;
     this.game.bird.updateAnimation(deltaTime);
   }
 
   draw(_ctx) {
-    this.renderer.drawSprite('bg_day', this.game.width / 2, this.game.height / 2);
+    if (this.game.background) {
+      this.game.background.draw(this.renderer);
+    }
 
     if (this.game.ground) {
       this.game.ground.draw();
@@ -66,10 +86,10 @@ export class StartScene extends BaseScene {
     this.renderer.drawSprite(
       birdSprite,
       this.game.width / 2,
-      this.game.height * 0.45 + this.birdY
+      this.game.height * StartSceneConfig.BIRD.yPosRatio + this.birdY
     );
 
-    this.renderer.drawSprite('title', this.game.width / 2, this.game.height * 0.33);
+    this.renderer.drawSprite('title', this.game.width / 2, this.game.height * StartSceneConfig.TITLE.yPosRatio);
 
     if (this.playButton) this.playButton.draw();
     if (this.rateButton) this.rateButton.draw();

@@ -1,3 +1,16 @@
+const BirdConfig = {
+  ANIMATION: {
+    frameInterval: 0.1,
+    smoothingFactor: 0.15
+  },
+  ROTATION: {
+    velocityMultiplier: 0.2,
+    baseOffset: -60,
+    minAngle: -30,
+    maxAngle: 90
+  }
+};
+
 export default class Bird {
   constructor(config) {
     this.x = config.x || 90;
@@ -25,11 +38,17 @@ export default class Bird {
     this.velocity += this.gravity * deltaTime;
     this.y += this.velocity * deltaTime;
 
-    const targetRotation = Math.min(Math.max(this.velocity * 0.2 - 60, -30), 90) * Math.PI / 180;
-    this.rotation += (targetRotation - this.rotation) * 0.15;
+    const targetRotation = Math.min(
+      Math.max(
+        this.velocity * BirdConfig.ROTATION.velocityMultiplier + BirdConfig.ROTATION.baseOffset,
+        BirdConfig.ROTATION.minAngle
+      ),
+      BirdConfig.ROTATION.maxAngle
+    ) * Math.PI / 180;
+    this.rotation += (targetRotation - this.rotation) * BirdConfig.ANIMATION.smoothingFactor;
 
     this.frameTimer += deltaTime;
-    if (this.frameTimer >= 0.1) {
+    if (this.frameTimer >= BirdConfig.ANIMATION.frameInterval) {
       this.currentFrame = (this.currentFrame + 1) % 3;
       this.frameTimer = 0;
     }
@@ -41,7 +60,7 @@ export default class Bird {
 
   updateAnimation(deltaTime) {
     this.frameTimer += deltaTime;
-    if (this.frameTimer >= 0.1) {
+    if (this.frameTimer >= BirdConfig.ANIMATION.frameInterval) {
       this.currentFrame = (this.currentFrame + 1) % 3;
       this.frameTimer = 0;
     }

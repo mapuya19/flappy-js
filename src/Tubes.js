@@ -1,3 +1,25 @@
+const TubesConfig = {
+  GROUND: {
+    heightOffset: 112,
+    topPadding: 56
+  },
+  SPAWN: {
+    minY: 50,
+    bottomPadding: 30,
+    removalThreshold: -100
+  },
+  COLLISION: {
+    hitboxRadius: 10,
+    pipeCapOffset: 28
+  },
+  ATLAS: {
+    pipeTopX: 112,
+    pipeTopY: 646,
+    pipeBottomX: 168,
+    pipeBottomY: 646
+  }
+};
+
 export default class Tubes {
   constructor(config = {}) {
     this.width = config.width || 52;
@@ -42,7 +64,7 @@ export default class Tubes {
         scored = true;
       }
 
-      if (pipe.x <= -100) {
+      if (pipe.x <= TubesConfig.SPAWN.removalThreshold) {
         this.pipes.splice(i, 1);
         this.pipeStates.splice(i, 1);
       }
@@ -52,10 +74,10 @@ export default class Tubes {
   }
 
   spawnPipe() {
-    const groundY = this.canvasHeight - 112;
-    const usableHeight = groundY - 56 - this.gap;
-    const minY = 50;
-    const maxY = usableHeight - 30;
+    const groundY = this.canvasHeight - TubesConfig.GROUND.heightOffset;
+    const usableHeight = groundY - TubesConfig.GROUND.topPadding - this.gap;
+    const minY = TubesConfig.SPAWN.minY;
+    const maxY = usableHeight - TubesConfig.SPAWN.bottomPadding;
     const randomY = Math.random() * (maxY - minY) + minY;
 
     this.pipes.push({
@@ -68,16 +90,16 @@ export default class Tubes {
   }
 
   draw(ctx) {
-    const groundY = this.canvasHeight - 112;
+    const groundY = this.canvasHeight - TubesConfig.GROUND.heightOffset;
 
     for (const pipe of this.pipes) {
       const pipeTopY = pipe.yOffset + this.height / 2;
       const pipeBottomY = pipe.yOffset + this.height / 2 + this.gap;
 
-      const topPipeHeight = Math.min(pipeTopY + 28, groundY - 28);
+      const topPipeHeight = Math.min(pipeTopY + TubesConfig.COLLISION.pipeCapOffset, groundY - TubesConfig.COLLISION.pipeCapOffset);
       ctx.drawImage(
         this.atlasImage,
-        112, 646 + (this.height - topPipeHeight), this.width, topPipeHeight,
+        TubesConfig.ATLAS.pipeTopX, TubesConfig.ATLAS.pipeTopY + (this.height - topPipeHeight), this.width, topPipeHeight,
         pipe.x - this.width / 2, 0, this.width, topPipeHeight
       );
 
@@ -85,7 +107,7 @@ export default class Tubes {
       if (bottomPipeHeight > 0) {
         ctx.drawImage(
           this.atlasImage,
-          168, 646, this.width, bottomPipeHeight,
+          TubesConfig.ATLAS.pipeBottomX, TubesConfig.ATLAS.pipeBottomY, this.width, bottomPipeHeight,
           pipe.x - this.width / 2, pipeBottomY, this.width, bottomPipeHeight
         );
       }
@@ -101,7 +123,7 @@ export default class Tubes {
   }
 
   checkCollision(bird) {
-    const hitboxRadius = 10;
+    const hitboxRadius = TubesConfig.COLLISION.hitboxRadius;
     
     for (let i = 0; i < this.pipes.length; i++) {
       const pipe = this.pipes[i];
@@ -114,7 +136,7 @@ export default class Tubes {
       const birdRight = bird.x + hitboxRadius;
 
       if (birdRight > pipeLeft && birdLeft < pipeRight) {
-        if (bird.y - hitboxRadius < pipeTopY + 28 || bird.y + hitboxRadius > pipeBottomY) {
+        if (bird.y - hitboxRadius < pipeTopY + TubesConfig.COLLISION.pipeCapOffset || bird.y + hitboxRadius > pipeBottomY) {
           return true;
         }
       }

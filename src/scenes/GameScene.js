@@ -1,5 +1,15 @@
 import { BaseScene } from './BaseScene.js';
 
+const GameSceneConfig = {
+  SCORE: {
+    positionYRatio: 0.15,
+    offset: 10
+  },
+  COLLISION: {
+    groundOffset: 12
+  }
+};
+
 export class GameScene extends BaseScene {
   constructor(game) {
     super(game);
@@ -33,7 +43,7 @@ export class GameScene extends BaseScene {
     }
 
     const groundY = this.game.height - this.game.ground.groundHeight;
-    if (this.game.bird.y >= groundY - 12) {
+    if (this.game.bird.y >= groundY - GameSceneConfig.COLLISION.groundOffset) {
       this.collided = true;
       this.game.triggerGameOver();
       return;
@@ -46,7 +56,9 @@ export class GameScene extends BaseScene {
   }
 
   draw(_ctx) {
-    this.renderer.drawSprite('bg_day', this.game.width / 2, this.game.height / 2);
+    if (this.game.background) {
+      this.game.background.draw(this.renderer);
+    }
 
     if (this.game.tubes) {
       this.game.tubes.draw(this.ctx);
@@ -69,7 +81,7 @@ export class GameScene extends BaseScene {
 
   drawScore() {
     const scoreStr = this.score.toString();
-    const y = this.game.height * 0.15 + 10;
+    const y = this.game.height * GameSceneConfig.SCORE.positionYRatio + GameSceneConfig.SCORE.offset;
 
     const digitWidths = [];
     for (const digit of scoreStr) {

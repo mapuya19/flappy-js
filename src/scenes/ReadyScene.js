@@ -1,6 +1,26 @@
 import { BaseScene } from './BaseScene.js';
 import { GameState } from '../GameState.js';
 
+const ReadySceneConfig = {
+  BIRD: {
+    yPosOffset: 10,
+    hoverFrequency: 7,
+    hoverAmplitude: 4
+  },
+  TEXT: {
+    readyYPosRatio: 0.33,
+    tutorialYPosRatio: 0.55
+  },
+  SCORE: {
+    yPosRatio: 0.15,
+    offset: 10
+  },
+  FADE: {
+    inDuration: 0.5,
+    outDuration: 0.3
+  }
+};
+
 export class ReadyScene extends BaseScene {
   constructor(game) {
     super(game);
@@ -13,7 +33,7 @@ export class ReadyScene extends BaseScene {
   }
 
   onEnter() {
-    this.game.bird.y = this.game.height / 2 + 10;
+    this.game.bird.y = this.game.height / 2 + ReadySceneConfig.BIRD.yPosOffset;
     this.fadeAlpha = 0;
     this.fadeTimer = 0;
     this.fading = true;
@@ -22,21 +42,21 @@ export class ReadyScene extends BaseScene {
 
   update(deltaTime) {
     this.birdTimer += deltaTime;
-    this.birdY = Math.sin(this.birdTimer * 7) * 4;
+    this.birdY = Math.sin(this.birdTimer * ReadySceneConfig.BIRD.hoverFrequency) * ReadySceneConfig.BIRD.hoverAmplitude;
     this.game.bird.updateAnimation(deltaTime);
 
     if (this.fading) {
       this.fadeTimer += deltaTime;
       if (this.nextState === null) {
-        if (this.fadeTimer < 0.5) {
-          this.fadeAlpha = this.fadeTimer / 0.5;
+        if (this.fadeTimer < ReadySceneConfig.FADE.inDuration) {
+          this.fadeAlpha = this.fadeTimer / ReadySceneConfig.FADE.inDuration;
         } else {
           this.fadeAlpha = 1;
           this.fading = false;
         }
       } else {
-        if (this.fadeTimer < 0.3) {
-          this.fadeAlpha = 1 - this.fadeTimer / 0.3;
+        if (this.fadeTimer < ReadySceneConfig.FADE.outDuration) {
+          this.fadeAlpha = 1 - this.fadeTimer / ReadySceneConfig.FADE.outDuration;
         } else {
           this.game.transitionTo(this.nextState);
           this.fading = false;
@@ -46,7 +66,9 @@ export class ReadyScene extends BaseScene {
   }
 
   draw(_ctx) {
-    this.renderer.drawSprite('bg_day', this.game.width / 2, this.game.height / 2);
+    if (this.game.background) {
+      this.game.background.draw(this.renderer);
+    }
 
     if (this.game.ground) {
       this.game.ground.draw();
@@ -55,14 +77,14 @@ export class ReadyScene extends BaseScene {
     this.renderer.drawSprite(
       'text_ready',
       this.game.width / 2,
-      this.game.height * 0.33,
+      this.game.height * ReadySceneConfig.TEXT.readyYPosRatio,
       { alpha: this.fadeAlpha }
     );
 
     this.renderer.drawSprite(
       'tutorial',
       this.game.width / 2,
-      this.game.height * 0.55,
+      this.game.height * ReadySceneConfig.TEXT.tutorialYPosRatio,
       { alpha: this.fadeAlpha }
     );
 
@@ -78,7 +100,7 @@ export class ReadyScene extends BaseScene {
 
   drawScore() {
     const scoreStr = '0';
-    const y = this.game.height * 0.15 + 10;
+    const y = this.game.height * ReadySceneConfig.SCORE.yPosRatio + ReadySceneConfig.SCORE.offset;
 
     const digitWidths = [];
     for (const digit of scoreStr) {

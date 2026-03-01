@@ -1,5 +1,16 @@
+const ScreenShakeConfig = {
+  RANDOM: {
+    centerOffset: 0.5,
+    multiplier: 2
+  },
+  DEFAULTS: {
+    intensity: 10,
+    duration: 0.3
+  }
+};
+
 export default class ScreenShake {
-  constructor(intensity = 10, duration = 0.3) {
+  constructor(intensity = ScreenShakeConfig.DEFAULTS.intensity, duration = ScreenShakeConfig.DEFAULTS.duration) {
     this.intensity = intensity;
     this.duration = duration;
     this.currentTime = 0;
@@ -28,8 +39,8 @@ export default class ScreenShake {
       const currentIntensity = this.intensity * progress;
       
       this.currentShake = {
-        x: (Math.random() - 0.5) * currentIntensity * 2,
-        y: (Math.random() - 0.5) * currentIntensity * 2
+        x: (Math.random() - ScreenShakeConfig.RANDOM.centerOffset) * currentIntensity * ScreenShakeConfig.RANDOM.multiplier,
+        y: (Math.random() - ScreenShakeConfig.RANDOM.centerOffset) * currentIntensity * ScreenShakeConfig.RANDOM.multiplier
       };
     } else {
       this.currentShake = { x: 0, y: 0 };

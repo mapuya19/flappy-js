@@ -19,7 +19,9 @@ const GameConfig = {
     x: 90,
     radius: 15,
     gravity: 900,
-    tapVelocity: -260
+    tapVelocity: -260,
+    colorCount: 3,
+    initialYRatio: 0.5
   },
   tubes: {
     width: 52,
@@ -28,6 +30,18 @@ const GameConfig = {
     speed: 90,
     spacing: 420,
     spawnInterval: 2.0
+  },
+  fade: {
+    duration: 0.2
+  },
+  loading: {
+    bgColor: '#70c5ce',
+    textColor: '#ffffff',
+    font: '24px Arial',
+    text: 'Loading...'
+  },
+  gameLoop: {
+    maxDeltaTime: 1 / 30
   }
 };
 
@@ -57,7 +71,7 @@ export default class Game {
     this.firstDeath = true;
 
     this.bird = new Bird({ ...GameConfig.bird, canvasHeight: this.height });
-    this.bird.y = this.height / 2;
+    this.bird.y = this.height * GameConfig.bird.initialYRatio;
 
     this.tubes = new Tubes({ ...GameConfig.tubes, canvasHeight: this.height, canvasWidth: this.width });
     this.ground = new Ground(this.width, this.height, WorldSpeed.GROUND);
@@ -106,7 +120,8 @@ export default class Game {
     if (this.currentScene) {
       if (newState === GameState.READY) {
         if (!this.firstDeath) {
-          this.bird.birdColor = Math.floor(Math.random() * 3);
+          this.bird.birdColor = Math.floor(Math.random() * GameConfig.bird.colorCount);
+          this.background.setDayMode(Math.random() < 0.5);
         }
         this.bird.reset();
         this.tubes.reset();
@@ -214,9 +229,9 @@ export default class Game {
 
     if (this.fading === true) {
       this.fadeTimer += deltaTime;
-      if (this.fadeTimer < 0.2) {
-        this.fadeAlpha = this.fadeTimer / 0.2;
-      } else if (this.fadeTimer >= 0.2) {
+      if (this.fadeTimer < GameConfig.fade.duration) {
+        this.fadeAlpha = this.fadeTimer / GameConfig.fade.duration;
+      } else if (this.fadeTimer >= GameConfig.fade.duration) {
         this.transitionTo(this.nextState);
         this.fading = 'out';
         this.fadeTimer = 0;
@@ -226,8 +241,8 @@ export default class Game {
 
     if (this.fading === 'out') {
       this.fadeTimer += deltaTime;
-      this.fadeAlpha = 1 - Math.min(this.fadeTimer / 0.2, 1);
-      if (this.fadeTimer >= 0.2) {
+      this.fadeAlpha = 1 - Math.min(this.fadeTimer / GameConfig.fade.duration, 1);
+      if (this.fadeTimer >= GameConfig.fade.duration) {
         this.fading = false;
       }
     }
@@ -260,21 +275,21 @@ export default class Game {
   }
 
   drawLoading() {
-    this.ctx.fillStyle = '#70c5ce';
+    this.ctx.fillStyle = GameConfig.loading.bgColor;
     this.ctx.fillRect(0, 0, this.width, this.height);
 
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '24px Arial';
+    this.ctx.fillStyle = GameConfig.loading.textColor;
+    this.ctx.font = GameConfig.loading.font;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
-    this.ctx.fillText('Loading...', this.width / 2, this.height / 2);
+    this.ctx.fillText(GameConfig.loading.text, this.width / 2, this.height / 2);
   }
 
   start() {
     this.lastTime = performance.now();
 
     const gameLoop = (timestamp) => {
-      const deltaTime = Math.min((timestamp - this.lastTime) / 1000, 1 / 30);
+      const deltaTime = Math.min((timestamp - this.lastTime) / 1000, GameConfig.gameLoop.maxDeltaTime);
       this.lastTime = timestamp;
 
       this.update(deltaTime);
