@@ -10,8 +10,7 @@ const LeaderboardSceneConfig = {
   POSITIONS: {
     startYRatio: 0.20,
     rowHeight: 28,
-    nameX: 80,
-    scoreX: 210,
+    contentWidth: 170,
     buttonYRatio: 0.73
   }
 };
@@ -82,19 +81,22 @@ export class LeaderboardScene extends BaseScene {
 
     const startY = this.game.height * LeaderboardSceneConfig.POSITIONS.startYRatio;
     const rowHeight = LeaderboardSceneConfig.POSITIONS.rowHeight;
-    const nameX = LeaderboardSceneConfig.POSITIONS.nameX;
-    const scoreX = LeaderboardSceneConfig.POSITIONS.scoreX;
+    const midX = this.game.width / 2;
+    const halfContentWidth = LeaderboardSceneConfig.POSITIONS.contentWidth / 2;
+    const nameX = midX - halfContentWidth;
+    const scoreX = midX + halfContentWidth;
 
     if (this.loading) {
-      this.drawText(ctx, 'Loading...', this.game.width / 2, startY + 50);
+      this.drawText(ctx, 'Loading...', midX, startY + 50);
     } else if (this.scores.length === 0) {
-      this.drawText(ctx, 'No scores yet', this.game.width / 2, startY + 50);
+      this.drawText(ctx, 'No scores yet', midX, startY + 50);
     } else {
       for (let i = 0; i < this.scores.length; i++) {
         const score = this.scores[i];
         const y = startY + i * rowHeight;
 
-        this.drawText(ctx, `${i + 1}. ${score.name}`, nameX, y);
+        const name = score.name.length > 10 ? score.name.substring(0, 10) : score.name;
+        this.drawText(ctx, `${i + 1}. ${name}`, nameX, y, 'left', 24);
         this.drawScore(score.score, scoreX, y);
       }
     }
@@ -106,9 +108,9 @@ export class LeaderboardScene extends BaseScene {
     ctx.restore();
   }
 
-  drawText(ctx, text, x, y) {
-    ctx.font = '20px Flappy';
-    ctx.textAlign = 'center';
+  drawText(ctx, text, x, y, align = 'center', fontSize = 20) {
+    ctx.font = `${fontSize}px Flappy`;
+    ctx.textAlign = align;
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000';
@@ -120,7 +122,8 @@ export class LeaderboardScene extends BaseScene {
   drawScore(score, x, y) {
     const scoreStr = score.toString();
     const digitWidth = 15;
-    let currentX = x;
+    const totalWidth = scoreStr.length * digitWidth;
+    let currentX = x - totalWidth;
 
     for (const digit of scoreStr) {
       const spriteName = `number_score_0${digit}`;
